@@ -71,12 +71,18 @@
     }
 
     .el-menu-item, .el-submenu__title {
+      font-size: 30px !important;
       overflow: hidden !important;
       text-overflow: ellipsis !important;
       white-space: nowrap !important;
-      height: 100px !important; // 新增：设置菜单项高度
-      line-height: 100px !important; // 新增：设置文本垂直居中
+      height: 200px !important; /* 设置菜单项高度 */
+      line-height: 200px !important; /* 设置文本垂直居中 */
+      background-image: linear-gradient(to bottom, #E8F4FF, #9cecfb);
+      /* 渐变从淡蓝色 (#B0E0E6) 到更浅的蓝色 (#ADD8E6) */
     }
+
+
+
 
     // menu hover
     .submenu-title-noDropdown,

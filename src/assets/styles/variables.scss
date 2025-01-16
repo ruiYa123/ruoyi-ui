@@ -15,7 +15,7 @@ $base-menu-background:#304156;
 $base-logo-title-color: #ffffff;
 
 $base-menu-light-color:rgba(0,0,0,.70);
-$base-menu-light-background:#ffffff;
+$base-menu-light-background:#E8F4FF;
 $base-logo-light-title-color: #001529;
 
 $base-sub-menu-background:#1f2d3d;
@@ -36,7 +36,7 @@ $base-sub-menu-background:#000c17;
 $base-sub-menu-hover:#001528;
 */
 
-$base-sidebar-width: 200px;
+$base-sidebar-width: 400px;
 
 // the :export directive is the magic sauce for webpack
 // https://www.bluematador.com/blog/how-to-share-variables-between-js-and-sass
