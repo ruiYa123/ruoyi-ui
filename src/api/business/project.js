@@ -1,44 +1,44 @@
 import request from '@/utils/request'
 
-// 查询【请填写功能名称】列表
+// 查询项目列表
 export function listProject(query) {
   return request({
-    url: '/system/project/list',
+    url: '/business/project/list',
     method: 'get',
     params: query
   })
 }
 
-// 查询【请填写功能名称】详细
+// 查询项目详细
 export function getProject(id) {
   return request({
-    url: '/system/project/' + id,
+    url: '/business/project/' + id,
     method: 'get'
   })
 }
 
-// 新增【请填写功能名称】
+// 新增项目
 export function addProject(data) {
   return request({
-    url: '/system/project',
+    url: '/business/project',
     method: 'post',
     data: data
   })
 }
 
-// 修改【请填写功能名称】
+// 修改项目
 export function updateProject(data) {
   return request({
-    url: '/system/project',
+    url: '/business/project',
     method: 'put',
     data: data
   })
 }
 
-// 删除【请填写功能名称】
+// 删除项目
 export function delProject(id) {
   return request({
-    url: '/system/project/' + id,
+    url: '/business/project/' + id,
     method: 'delete'
   })
 }

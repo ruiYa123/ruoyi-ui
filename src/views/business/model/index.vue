@@ -9,30 +9,6 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="训练次数" prop="epoch">
-        <el-input
-          v-model="queryParams.epoch"
-          placeholder="请输入训练次数"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="批大小" prop="batchSize">
-        <el-input
-          v-model="queryParams.batchSize"
-          placeholder="请输入批大小"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="图像大小" prop="imgSize">
-        <el-input
-          v-model="queryParams.imgSize"
-          placeholder="请输入图像大小"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -87,11 +63,8 @@
 
     <el-table v-loading="loading" :data="modelList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="模型ID" align="center" prop="id" />
+      <el-table-column label="模型ID，自动递增" align="center" prop="id" />
       <el-table-column label="模型名称" align="center" prop="modelName" />
-      <el-table-column label="训练次数" align="center" prop="epoch" />
-      <el-table-column label="批大小" align="center" prop="batchSize" />
-      <el-table-column label="图像大小" align="center" prop="imgSize" />
       <el-table-column label="描述" align="center" prop="description" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
@@ -127,15 +100,6 @@
         <el-form-item label="模型名称" prop="modelName">
           <el-input v-model="form.modelName" placeholder="请输入模型名称" />
         </el-form-item>
-        <el-form-item label="训练次数" prop="epoch">
-          <el-input v-model="form.epoch" placeholder="请输入训练次数" />
-        </el-form-item>
-        <el-form-item label="批大小" prop="batchSize">
-          <el-input v-model="form.batchSize" placeholder="请输入批大小" />
-        </el-form-item>
-        <el-form-item label="图像大小" prop="imgSize">
-          <el-input v-model="form.imgSize" placeholder="请输入图像大小" />
-        </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input v-model="form.description" type="textarea" placeholder="请输入内容" />
         </el-form-item>
@@ -149,7 +113,7 @@
 </template>
 
 <script>
-import { listModel, getModel, delModel, addModel, updateModel } from "@/api/miaoxiangBussiness/model";
+import { listModel, getModel, delModel, addModel, updateModel } from "@/api/business/model";
 
 export default {
   name: "Model",
@@ -178,9 +142,6 @@ export default {
         pageNum: 1,
         pageSize: 10,
         modelName: null,
-        epoch: null,
-        batchSize: null,
-        imgSize: null,
         description: null,
       },
       // 表单参数
@@ -189,15 +150,6 @@ export default {
       rules: {
         modelName: [
           { required: true, message: "模型名称不能为空", trigger: "blur" }
-        ],
-        epoch: [
-          { required: true, message: "训练次数不能为空", trigger: "blur" }
-        ],
-        batchSize: [
-          { required: true, message: "批大小不能为空", trigger: "blur" }
-        ],
-        imgSize: [
-          { required: true, message: "图像大小不能为空", trigger: "blur" }
         ],
       }
     };
@@ -225,9 +177,6 @@ export default {
       this.form = {
         id: null,
         modelName: null,
-        epoch: null,
-        batchSize: null,
-        imgSize: null,
         description: null,
         createTime: null,
         createBy: null,

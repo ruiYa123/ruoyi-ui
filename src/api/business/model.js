@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询模型列表
 export function listModel(query) {
   return request({
-    url: '/system/model/list',
+    url: '/business/model/list',
     method: 'get',
     params: query
   })
@@ -12,7 +12,7 @@ export function listModel(query) {
 // 查询模型详细
 export function getModel(id) {
   return request({
-    url: '/system/model/' + id,
+    url: '/business/model/' + id,
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function getModel(id) {
 // 新增模型
 export function addModel(data) {
   return request({
-    url: '/system/model',
+    url: '/business/model',
     method: 'post',
     data: data
   })
@@ -29,7 +29,7 @@ export function addModel(data) {
 // 修改模型
 export function updateModel(data) {
   return request({
-    url: '/system/model',
+    url: '/business/model',
     method: 'put',
     data: data
   })
@@ -38,7 +38,7 @@ export function updateModel(data) {
 // 删除模型
 export function delModel(id) {
   return request({
-    url: '/system/model/' + id,
+    url: '/business/model/' + id,
     method: 'delete'
   })
 }

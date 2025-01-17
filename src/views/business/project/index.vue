@@ -1,21 +1,6 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="模型ID" prop="modelId">
-        <el-select
-          v-model="queryParams.modelId"
-          placeholder="请选择模型"
-          clearable
-          @change="handleQuery">
-          <el-option
-            v-for="model in models"
-            :key="model.id"
-            :label="model.modelName"
-            :value="model.id">
-          </el-option>
-        </el-select>
-      </el-form-item>
-
+    <el-form :model="queryParams" class="search-form-class" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="项目名称" prop="projectName">
         <el-input
           v-model="queryParams.projectName"
@@ -28,53 +13,17 @@
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
-    </el-form>
-
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
+      <el-form-item style="margin-left: auto;">
         <el-button
           type="primary"
           plain
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['system:project:add']"
+          v-hasPermi="['business:project:add']"
         >新增项目</el-button>
-      </el-col>
-      <!--      <el-col :span="1.5">-->
-      <!--        <el-button-->
-      <!--          type="success"-->
-      <!--          plain-->
-      <!--          icon="el-icon-edit"-->
-      <!--          size="mini"-->
-      <!--          :disabled="single"-->
-      <!--          @click="handleUpdate"-->
-      <!--          v-hasPermi="['system:project:edit']"-->
-      <!--        >修改</el-button>-->
-      <!--      </el-col>-->
-      <!--      <el-col :span="1.5">-->
-      <!--        <el-button-->
-      <!--          type="danger"-->
-      <!--          plain-->
-      <!--          icon="el-icon-delete"-->
-      <!--          size="mini"-->
-      <!--          :disabled="multiple"-->
-      <!--          @click="handleDelete"-->
-      <!--          v-hasPermi="['system:project:remove']"-->
-      <!--        >删除</el-button>-->
-      <!--      </el-col>-->
-      <!--      <el-col :span="1.5">-->
-      <!--        <el-button-->
-      <!--          type="warning"-->
-      <!--          plain-->
-      <!--          icon="el-icon-download"-->
-      <!--          size="mini"-->
-      <!--          @click="handleExport"-->
-      <!--          v-hasPermi="['system:project:export']"-->
-      <!--        >导出</el-button>-->
-      <!--      </el-col>-->
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
-    </el-row>
+      </el-form-item>
+    </el-form>
     <template>
       <el-collapse
         accordion
@@ -84,7 +33,8 @@
         <el-collapse-item name="1" disabled>
           <template #title>
             <div class="collapse-title">
-              <span>{{ projectDetail.projectName }}</span>
+              <span v-if="activeName === '1'">{{ projectDetail.projectName }}</span>
+              <span v-else><i class="el-icon-loading"></i></span>
               <div class="button-group">
                 <el-button type="info" size="mini" plain @click="handleUpdate(projectDetail)">资源管理</el-button>
                 <el-button type="primary" size="mini" plain @click="handleUpdate(projectDetail)">编辑项目</el-button>
@@ -93,16 +43,22 @@
             </div>
           </template>
           <el-descriptions :column="2">
-            <el-descriptions-item label="算法模型">{{ projectDetail.modelName }}</el-descriptions-item>
-            <el-descriptions-item label="创建时间">{{ projectDetail.createTime }}</el-descriptions-item>
-            <el-descriptions-item label="设备列表" :span="2">
+              <el-descriptions-item label="创建时间" :span="2">{{ projectDetail.createTime }}</el-descriptions-item>
+            <el-descriptions-item label="任务列表" :span="2">
               <template>
-                <el-tag v-for="(device, index) in projectDetail.deviceList" :key="index" size="small" style="margin-right: 8px;">
-                  {{ device }}
-                </el-tag>
+                <el-button
+                  v-for="(assignment, index) in projectDetail.assignmentList"
+                  :key="index"
+                  type="primary"
+                  plain
+                  size="mini"
+                  style="margin-right: 8px;"
+                  @click="toAssignment(assignment)"
+                  v-hasPermi="['business:project:list']"
+                >{{ assignment.assignmentName }}</el-button>
               </template>
             </el-descriptions-item>
-            <el-descriptions-item label="备注" :span="2">
+            <el-descriptions-item label="项目描述" :span="2">
               {{ projectDetail.description }}
             </el-descriptions-item>
           </el-descriptions>
@@ -113,15 +69,12 @@
       ref="projectTable"
       v-loading="loading"
       :data="projectList"
-      @selection-change="handleSelectionChange"
       @row-click="handleRowClick"
       highlight-current-row>
 
-      <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="项目ID" align="center" prop="id" />
       <el-table-column label="项目名称" align="center" prop="projectName" />
-      <el-table-column label="模型" align="center" prop="modelName" />
-      <el-table-column label="描述" align="center" prop="description" />
+      <el-table-column label="项目描述" align="center" prop="description" />
+      <el-table-column label="创建时间" align="center" prop="createTime" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -129,14 +82,16 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['system:project:edit']"
+            @click.stop
+            v-hasPermi="['business:project:edit']"
           >修改</el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['system:project:remove']"
+            @click.stop
+            v-hasPermi="['business:project:remove']"
           >删除</el-button>
         </template>
       </el-table-column>
@@ -151,24 +106,13 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改【请填写功能名称】对话框 -->
+    <!-- 添加或修改项目对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="模型" prop="modelId">
-          <el-select v-model="form.modelId" placeholder="请选择模型">
-            <el-option
-              v-for="model in models"
-              :key="model.id"
-              :label="model.modelName"
-              :value="model.id">
-            </el-option>
-          </el-select>
-        </el-form-item>
-
         <el-form-item label="项目名称" prop="projectName">
           <el-input v-model="form.projectName" placeholder="请输入项目名称" />
         </el-form-item>
-        <el-form-item label="描述" prop="description">
+        <el-form-item label="项目描述" prop="description">
           <el-input v-model="form.description" type="textarea" placeholder="请输入内容" />
         </el-form-item>
       </el-form>
@@ -181,8 +125,9 @@
 </template>
 
 <script>
-import { listProject, getProject, delProject, addProject, updateProject } from "@/api/miaoxiangBussiness/project";
-import { listModel } from '@/api/miaoxiangBussiness/model'
+import { listProject, getProject, delProject, addProject, updateProject } from "@/api/business/project";
+import { listAssignment } from '@/api/business/assignment'
+import { mapGetters } from 'vuex'
 
 export default {
   name: "Project",
@@ -215,47 +160,63 @@ export default {
         modelId: null,
         projectName: null,
         description: null,
+        orderByColumn: 'id'
       },
       // 表单参数
       form: {},
       // 表单校验
       rules: {
-        modelId: [
-          { required: true, message: "模型不能为空", trigger: "blur" }
-        ],
         projectName: [
           { required: true, message: "项目名称不能为空", trigger: "blur" }
         ],
       },
-      models: [],
     };
+  },
+  computed: {
+    ...mapGetters(['permission_routes'])
   },
   created() {
     this.getList();
+    console.log(this.permission_routes)
   },
   methods: {
-    /** 查询【请填写功能名称】列表 */
     getList() {
       this.loading = true;
       listProject(this.queryParams).then(response => {
         this.projectList = response.rows;
         this.total = response.total;
-        this.projectDetail = this.projectList[0]
-        this.handleRowClick(this.projectList[0])
+        if (this.projectList.length > 0) {
+          this.projectDetail = this.projectList[0]
+          this.handleRowClick(this.projectList[0])
+        } else {
+          this.activeName = '1';
+          this.projectDetail.projectName = '暂无项目';
+        }
         this.loading = false;
       });
-      listModel().then(response => {
-        this.models = response.rows;
-      })
     },
+    toAssignment(assignment) {
+      this.$router.push({
+        path: '/assignment',
+        query: {
+          id: assignment.id,
+          state: assignment.state
+        }
+      });
+    },
+
     handleRowClick(row) {
       this.activeName = null;
+      this.$refs.projectTable.setCurrentRow(row);
+      listAssignment({projectId: row.id}).then(response => {
+        this.projectDetail.assignmentList = response.rows;
+      });
       setTimeout(() => {
-        this.$refs.projectTable.setCurrentRow(row);
-        this.projectDetail = row;
+        this.projectDetail = Object.assign({}, this.projectDetail, row);
         this.activeName = "1";
-      }, 500);
+      }, 300);
     },
+
     // 取消按钮
     cancel() {
       this.open = false;
@@ -265,7 +226,6 @@ export default {
     reset() {
       this.form = {
         id: null,
-        modelId: null,
         projectName: null,
         description: null,
         createTime: null,
@@ -295,7 +255,7 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
-      this.title = "添加【请填写功能名称】";
+      this.title = "添加项目";
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -304,7 +264,7 @@ export default {
       getProject(id).then(response => {
         this.form = response.data;
         this.open = true;
-        this.title = "修改【请填写功能名称】";
+        this.title = "修改项目";
       });
     },
     /** 提交按钮 */
@@ -330,7 +290,7 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids;
-      this.$modal.confirm('是否确认删除【请填写功能名称】编号为"' + ids + '"的数据项？').then(function() {
+      this.$modal.confirm('是否确认删除项目：' + row.projectName + '？').then(function() {
         return delProject(ids);
       }).then(() => {
         this.getList();
@@ -340,7 +300,7 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('system/project/export', {
+      this.download('business/project/export', {
         ...this.queryParams
       }, `project_${new Date().getTime()}.xlsx`)
     }
@@ -349,6 +309,12 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.search-form-class{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
 .custom-collapse ::v-deep {
   background-color: transparent;
   //margin-bottom: 10px;
@@ -382,6 +348,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  font-size: 32px;
 }
 
 .button-group {
