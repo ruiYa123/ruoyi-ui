@@ -113,7 +113,7 @@
           />
         </pane>
         <pane size="40">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 24px">
             {{ assignmentDetail.assignmentName }}
             <el-button
               type="primary"
@@ -172,7 +172,7 @@
                 >删除项目</el-button>
               </div>
               <div class="container">
-                <el-progress type="circle" :percentage="25" style="margin: 10px"></el-progress>
+                <el-progress type="circle" :percentage="progress" style="margin: 10px"></el-progress>
                 <el-card class="box-card">
                   <div slot="header" class="clearfix">
                     <span>训练日志</span>
@@ -181,7 +181,7 @@
                   <!-- 设置固定高度和滚动条 -->
                   <div class="card-content">
                     <div v-for="o in 20" :key="o" class="text item">
-                      {{ '列表内容 ' + o }}
+                      {{ '日志内容 ' + o }}
                     </div>
                   </div>
                 </el-card>
@@ -189,14 +189,25 @@
             </el-collapse-item>
             <el-collapse-item name="2" title="训练记录">
               <div style="margin-bottom: 20px">
-                <el-table v-loading="false" :data="roleList" @selection-change="handleSelectionChange">
-                  <el-table-column label="训练次数" prop="roleId" width="100px"/>
-                  <el-table-column label="开始时间" prop="roleName" :show-overflow-tooltip="true"/>
-                  <el-table-column label="完成时间" prop="roleKey" :show-overflow-tooltip="true"/>
-                  <el-table-column label="信息" prop="roleSort"/>
-                  <el-table-column label="备注" prop="roleSort"/>
-                  <el-table-column label="操作" prop="roleSort"/>
+                <el-table v-loading="trainLoading" :data="trainList" @selection-change="handleSelectionChange">
+                  <el-table-column label="状态" align="center" prop="state">
+                    <template slot-scope="scope">
+                      <span v-if="scope.row.state === '0'">训练中</span>
+                      <span v-else-if="scope.row.state === '1'">成功</span>
+                      <span v-else-if="scope.row.state === '2'">失败</span>
+                      <span v-else>未知状态</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="进度" align="center" prop="progress" />
+                  <el-table-column label="备注" align="center" prop="description" />
                 </el-table>
+                <pagination
+                  v-show="trainTotal>0"
+                  :total="trainTotal"
+                  :page.sync="trainQueryParams.pageNum"
+                  :limit.sync="trainQueryParams.pageSize"
+                  @pagination="getTrainList"
+                />
               </div>
             </el-collapse-item>
           </el-collapse>
@@ -265,6 +276,7 @@ import {
   listAssignment,
   updateAssignment
 } from '@/api/business/assignment'
+import { listTrain } from '@/api/business/train'
 
 export default {
   components: { Splitpanes, Pane },
@@ -273,6 +285,15 @@ export default {
       assignmentDetail: {},
       // 遮罩层
       loading: false,
+      trainLoading: false,
+      trainList: [],
+      trainTotal: 0,
+      progress: 0,
+      trainQueryParams: {
+        assignmentId: null,
+        pageNum: 1,
+        pageSize: 10
+      },
       // 选中数组
       ids: [],
       // 非单个禁用
@@ -349,7 +370,6 @@ export default {
   methods: {
     /** 查询任务列表 */
     getList(id) {
-      console.log('id:' +id)
       this.loading = true;
       listAssignment(this.queryParams).then(response => {
         this.assignmentList = response.rows;
@@ -366,6 +386,21 @@ export default {
           this.queuedCount = res.data[2]
           this.loading = false;
         })
+      });
+    },
+    getTrainList(id) {
+      this.trainLoading = true;
+      this.trainQueryParams.assignmentId = id;
+      listTrain(this.trainQueryParams).then(response => {
+        this.trainList = response.rows;
+        this.trainTotal = response.total;
+        if (this.trainList.length > 0) {
+          let lastTrain = this.trainList[this.trainList.length - 1];
+          this.progress = lastTrain.progress
+        } else {
+          this.progress = 0
+        }
+        this.trainLoading = false;
       });
     },
     getProjectName(projectId) {
@@ -409,6 +444,8 @@ export default {
       this.activeName = [];
       this.assignmentDetail = { ...row };
       this.$refs.assignmentTable.setCurrentRow(row);
+      this.getTrainList(row.id)
+
       setTimeout(() => {
         this.activeName = ["1", "2"];
       }, 500);
