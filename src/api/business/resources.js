@@ -22,9 +22,13 @@ export function addResources(data) {
   return request({
     url: '/business/resources',
     method: 'post',
-    data: data
-  })
+    data: data,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
 }
+
 
 // 修改资源
 export function updateResources(data) {

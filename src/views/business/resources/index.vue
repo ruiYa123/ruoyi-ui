@@ -26,13 +26,13 @@
                 <el-tree
                   :data="data"
                   :props="defaultProps"
-                  :filter-node-method="filterNode"
                   ref="tree"
                   node-key="id"
                   default-expand-all
                   highlight-current
                   check-strictly
-                  @node-click="handleCheckChange"
+                  @node-click="handleNodeClick"
+                  @check-change="handleCheckChange"
                 >
                   <span
                     class="custom-tree-node"
@@ -165,6 +165,7 @@
                   list-type="picture"
                   :auto-upload="false"
                   multiple
+                  :on-change="handleChange"
                   >
                   <i class="el-icon-upload"></i>
                   <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
@@ -183,10 +184,10 @@
 </template>
 
 <script>
-import { Splitpanes, Pane } from "splitpanes";
-import "splitpanes/dist/splitpanes.css";
+import { Splitpanes, Pane } from "splitpanes"
+import "splitpanes/dist/splitpanes.css"
 import Treeselect from '@riophae/vue-treeselect'
-import { listResources, getResources, delResources, addResources, updateResources } from "@/api/business/resources";
+import { listResources, getResources, delResources, addResources, updateResources } from "@/api/business/resources"
 import { listProject } from '@/api/business/project'
 import { listAssignment } from '@/api/business/assignment'
 
@@ -215,6 +216,7 @@ export default {
         description: null,
         state: 0,
       },
+      currentNode: null,
       loading: true,
       ids: [],
       single: true,
@@ -233,6 +235,8 @@ export default {
       selectedIndex: [],
       projectOptions: [],
       assignmentOptions: [],
+      selectedAssignmentName: '',
+      selectedProjectName: '',
       items: [
         {
           name: '好吃的汉堡',
@@ -262,14 +266,22 @@ export default {
     };
   },
   created() {
-    this.getList();
-    this.getResourcesTree();
+    this.getResourcesTree().then(() => {
+      this.setDefaultSelectedNode();
+    });
   },
   methods: {
+    handleChange(file, fileList) {
+      console.log(file)
+      console.log(fileList)
+      this.fileList = fileList
+    },
     handleRemove(file, fileList) {
       console.log()
       // this.fileList = this.fileList.filter(item => item.uid !== file.uid);
       console.log(file, fileList)
+      console.log(this.fileList)
+      this.fileList = fileList
     },
     handlePreview(file) {
       console.log(file)
@@ -308,36 +320,77 @@ export default {
         selectedIndex.splice(selectedIndexPos, 1);
       }
     },
-    handleCheckChange(data, checked, indeterminate) {
-      if (data.children && data.children.length > 0) {
-        this.$refs.tree.setChecked(data.id, false, true);
+    handleNodeClick(data, node, component) {
+      const tree = this.$refs.tree;
+      if (node.level === 1) {
+        tree.setCurrentKey(this.currentNode);
+      } else {
+        tree.setCurrentKey(node.key);
+        this.currentNode = node.key
+        this.selectedAssignmentName = data.label; // 二级菜单名称
+        this.selectedProjectName = node.parent.data.label; // 父级菜单名称
       }
     },
-    getList() {
+    handleCheckChange(data, checked, indeterminate) {
+      const tree = this.$refs.tree;
+      const node = tree.getNode(data);
+
+      if (node.level === 1) {
+        tree.setChecked(node.data.id, false, true);
+      }
+
+      if (checked) {
+        tree.setCurrentKey(node.data.id);
+        this.currentNode = node.data.id;
+        this.getList()
+      } else {
+        tree.setCurrentKey(node.data.id);
+      }
+    },
+    getList(nodeId) {
       this.loading = true;
+      this.queryParams.assignmentId = nodeId
       listResources(this.queryParams).then(response => {
         this.resourcesList = response.rows;
         this.total = response.total;
         this.loading = false;
       });
     },
-    getResourcesTree() {
-      listProject().then(projectResponse => {
-        const projectMap = new Map(
-          projectResponse.rows.map(item => [item.id, { id: item.id, label: item.projectName, children: [] }])
-        );
-        listAssignment().then(assignmentResponse => {
-          assignmentResponse.rows.forEach(item => {
-            const assignment = { id: item.id, label: item.assignmentName, state: item.state };
-            const project = projectMap.get(item.projectId);
-            if (project) {
-              project.children.push(assignment);
-            }
-          });
+    async getResourcesTree() {
+      const projectResponse = await listProject();
+      const projectMap = new Map(
+        projectResponse.rows.map(item => [item.id, { id: item.id, label: item.projectName, children: [] }])
+      );
 
-          this.data = Array.from(projectMap.values());
-        });
+      const assignmentResponse = await listAssignment();
+      assignmentResponse.rows.forEach(item => {
+        const assignment = { id: item.id, label: item.assignmentName, state: item.state };
+        const project = projectMap.get(item.projectId);
+        if (project) {
+          project.children.push(assignment);
+        }
       });
+
+      this.data = Array.from(projectMap.values());
+      console.log(this.data);
+    },
+    setDefaultSelectedNode(id) {
+      let checkedId = null
+      if (id) {
+        checkedId = id;
+      } else {
+        for (const project of this.data) {
+          if (project.children && project.children.length > 0) {
+            checkedId = project.children[0].id;
+            break;
+          }
+        }
+      }
+      this.$nextTick(() => {
+        this.currentNode = checkedId
+        this.$refs.tree.setCurrentKey(checkedId);
+      });
+      this.getList(checkedId);
     },
     cancel() {
       this.open = false;
@@ -376,6 +429,7 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
+      this.form.assignmentId = this.currentNode
       this.title = "添加资源";
     },
     handleUpdate(row) {
@@ -389,15 +443,26 @@ export default {
     },
     submitForm() {
       this.$refs["form"].validate(valid => {
+        const formData = new FormData();
         if (valid) {
+          Object.entries(this.form).forEach(([key, value]) => {
+            if (value !== null) {
+              formData.append(key, value);
+            }
+          });
+          this.fileList.forEach(file => {
+            formData.append('files[]', file.raw);
+          });
+          formData.append('assignmentName', this.selectedAssignmentName);
+          formData.append('projectName', this.selectedProjectName);
           if (this.form.id != null) {
-            updateResources(this.form).then(response => {
+            updateResources(formData).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addResources(this.form).then(response => {
+            addResources(formData).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();

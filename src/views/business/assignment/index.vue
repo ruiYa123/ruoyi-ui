@@ -169,7 +169,7 @@
                   @click.stop
                   @click="handleDelete(assignmentDetail)"
                   v-hasPermi="['business:assignment:remove']"
-                >删除项目</el-button>
+                >删除任务</el-button>
               </div>
               <div class="container">
                 <el-progress type="circle" :percentage="progress" style="margin: 10px"></el-progress>
@@ -219,7 +219,7 @@
         <el-form-item label="任务名称" prop="assignmentName">
           <el-input v-model="form.assignmentName" placeholder="请输入任务名称" />
         </el-form-item>
-        <el-form-item label="所属项目" prop="projectId">
+        <el-form-item v-if="this.title === '添加任务'" label="所属项目" prop="projectId">
           <el-select v-model="form.projectId" placeholder="请选择所属项目">
             <el-option
               v-for="[id, projectName] in projectOptions"
@@ -480,11 +480,10 @@ export default {
     handleUpdate(row) {
       this.reset();
       const id = row.id || this.ids
+      this.title = "修改任务";
       getAssignment(id).then(response => {
         this.form = response.data;
-        console.log(this.form)
         this.open = true;
-        this.title = "修改任务";
       });
     },
     /** 提交按钮 */
