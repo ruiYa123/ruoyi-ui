@@ -9,6 +9,14 @@ export function listAssignment(query) {
   })
 }
 
+export function listAllAssignment(query) {
+  return request({
+    url: '/business/assignment/listAll',
+    method: 'get',
+    params: query
+  })
+}
+
 export function getStateCounts() {
   return request({
     url: '/business/assignment/counts',

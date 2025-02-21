@@ -36,7 +36,8 @@
               <span v-if="activeName === '1'">{{ projectDetail.projectName }}</span>
               <span v-else><i class="el-icon-loading"></i></span>
               <div class="button-group">
-                <el-button type="info" size="mini" plain @click="handleUpdate(projectDetail)">资源管理</el-button>
+                <el-button type="info" size="mini" plain @click="toResources(projectDetail)">资源管理</el-button>
+                <el-button type="primary" size="mini" plain @click="addAssignment">添加任务</el-button>
                 <el-button type="primary" size="mini" plain @click="handleUpdate(projectDetail)">编辑项目</el-button>
                 <el-button type="danger" size="mini" plain @click="handleDelete(projectDetail)">删除项目</el-button>
               </div>
@@ -45,7 +46,7 @@
           <el-descriptions :column="2">
               <el-descriptions-item label="创建时间" :span="2">{{ projectDetail.createTime }}</el-descriptions-item>
             <el-descriptions-item label="任务列表" :span="2">
-              <template>
+              <template v-if="projectDetail.assignmentList.length > 0">
                 <el-button
                   v-for="(assignment, index) in projectDetail.assignmentList"
                   :key="index"
@@ -121,6 +122,12 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+    <add-assignment-dialog
+      :open.sync="isAddAssignmentDialogOpen"
+      :title="'添加任务'"
+      :form.sync="assignmentForm"
+      :on-submit="handleAddAssignmentSubmit"
+    />
   </div>
 </template>
 
@@ -128,13 +135,17 @@
 import { listProject, getProject, delProject, addProject, updateProject } from "@/api/business/project";
 import { listAssignment } from '@/api/business/assignment'
 import { mapGetters } from 'vuex'
+import AddAssignmentDialog from '@/views/business/assignment/addAssignmentDialog.vue'
 
 export default {
   name: "Project",
+  components: { AddAssignmentDialog },
   data() {
     return {
       activeName: null,
-      projectDetail: {},
+      projectDetail: {
+        assignmentList: [], // 确保初始化
+      },
       // 遮罩层
       loading: true,
       // 选中数组
@@ -154,6 +165,17 @@ export default {
       // 是否显示弹出层
       open: false,
       // 查询参数
+      isAddAssignmentDialogOpen: false,
+      assignmentForm: {
+        assignmentName: '',
+        projectId: null,
+        modelId: null,
+        pretrainMode: '',
+        epoch: null,
+        batchSize: null,
+        imgSize: null,
+        description: ''
+      },
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -177,7 +199,6 @@ export default {
   },
   created() {
     this.getList();
-    console.log(this.permission_routes)
   },
   methods: {
     getList() {
@@ -187,13 +208,40 @@ export default {
         this.total = response.total;
         if (this.projectList.length > 0) {
           this.projectDetail = this.projectList[0]
+          this.projectDetail.assignmentList = []
           this.handleRowClick(this.projectList[0])
         } else {
           this.activeName = '1';
           this.projectDetail.projectName = '暂无项目';
         }
-        this.loading = false;
+        this.$nextTick(() => {
+          this.loading = false;
+        });
       });
+    },
+    addAssignment() {
+      this.assignmentForm.projectId = this.projectDetail.id;
+      this.isAddAssignmentDialogOpen = true;
+    },
+    handleAddAssignmentSubmit() {
+      this.activeName = null;
+      listAssignment({projectId: this.projectDetail.id}).then(response => {
+        this.projectDetail.assignmentList = response.rows;
+      });
+      setTimeout(() => {
+        this.projectDetail = Object.assign({}, this.projectDetail);
+        this.activeName = "1";
+      }, 300);
+      this.assignmentForm = {
+        assignmentName: '',
+          projectId: null,
+          modelId: null,
+          pretrainMode: '',
+          epoch: null,
+          batchSize: null,
+          imgSize: null,
+          description: ''
+      }
     },
     toAssignment(assignment) {
       this.$router.push({
@@ -201,6 +249,14 @@ export default {
         query: {
           id: assignment.id,
           state: assignment.state
+        }
+      });
+    },
+    toResources(project) {
+      this.$router.push({
+        path: '/resources',
+        query: {
+          projectId: project.id,
         }
       });
     },
@@ -349,6 +405,7 @@ export default {
   align-items: center;
   width: 100%;
   font-size: 32px;
+  font-weight: bold;
 }
 
 .button-group {

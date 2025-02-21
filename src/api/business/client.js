@@ -9,6 +9,14 @@ export function listClient(query) {
   })
 }
 
+export function listAllClient(query) {
+  return request({
+    url: '/business/client/listAll',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询客户端详细
 export function getClient(id) {
   return request({
@@ -17,10 +25,25 @@ export function getClient(id) {
   })
 }
 
+export function getClientStatus(name) {
+  return request({
+    url: '/business/client/status/' + name,
+    method: 'get'
+  })
+}
+
 // 新增客户端
 export function addClient(data) {
   return request({
     url: '/business/client',
+    method: 'post',
+    data: data
+  })
+}
+
+export function sendCommandToClient(data) {
+  return request({
+    url: '/business/client/sendMessage',
     method: 'post',
     data: data
   })

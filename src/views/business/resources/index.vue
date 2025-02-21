@@ -41,7 +41,7 @@
                   >
                     <span>{{ node.label }}</span>
                     <span v-if="node.level === 1" style="margin-left: auto;">
-                      <el-button type="text" size="mini" @click="() => append(data)">
+                      <el-button type="text" size="mini" @click="addAssignment(node)" @click.stop>
                         <i class="el-icon-plus"></i>
                       </el-button>
                     </span>
@@ -58,8 +58,8 @@
               项目名称 -> 设备名称
             </el-form-item>
             <el-form-item style="margin-left: auto;">
-              <div >
-                <el-button type="primary" plain>配置文件上传</el-button>
+              <div>
+<!--                <el-button type="primary" plain>配置文件上传</el-button>-->
               </div>
             </el-form-item>
           </el-form>
@@ -100,29 +100,29 @@
           <div style="display: flex; justify-content: center;">
             <el-button type="primary" plain @click="handleAdd">上传图片</el-button>
             <el-button type="success" plain>下载全部</el-button>
-            <el-button type="danger" plain>批量删除</el-button>
+            <el-button type="danger" @click="handleDeleteBatch" plain>批量删除</el-button>
           </div>
 
           <div class="card-container">
             <el-row>
               <el-col
                 :span="5"
-                v-for="(item, index) in items"
-                :key="index"
+                v-for="(item, index) in resourcesList"
+                :key="item.id"
                 :offset="index % 4 !== 0 ? 1 : 0"
                 style="margin-top: 5px; margin-bottom: 5px;"
               >
                 <el-card
                   :body-style="{ padding: '0px' }"
-                  v-on:click.native="toggleSelectCard(index)"
-                  :class="{ selected: selectedIndex.includes(index) }"
+                  v-on:click.native="toggleSelectCard(item.id)"
+                  :class="{ selected: selectedIndex.includes(item.id) }"
                 >
-                  <img :src="item.image" class="image" />
+                  <img :src="getRelativePath(item.imgPath)" class="image" />
                   <div style="padding: 14px;">
-                    <span>{{ item.name }}</span>
+                    <span>{{ item.imgName }}</span>
                     <div class="bottom clearfix">
-                      <time class="time">{{ currentDate }}</time>
-                      <el-button type="text" class="button"><i class="el-icon-delete" style="color: red" @click.stop></i> </el-button>
+                      <time class="time">{{ item.createTime }}</time>
+                      <el-button type="text" class="button"><i class="el-icon-delete" style="color: red" @click="handleDelete(item)" @click.stop></i> </el-button>
                       <el-button type="text" class="button"><i class="el-icon-download" style="color: green; margin-right: 5px" @click.stop></i> </el-button>
                     </div>
                   </div>
@@ -180,6 +180,13 @@
         </pane>
       </splitpanes>
     </el-row>
+    <add-assignment-dialog
+      :open.sync="isAddAssignmentDialogOpen"
+      :title="'添加任务'"
+      :is-project="isPorject"
+      :form.sync="assignmentForm"
+      :on-submit="handleAddAssignmentSubmit"
+    />
   </div>
 </template>
 
@@ -189,14 +196,17 @@ import "splitpanes/dist/splitpanes.css"
 import Treeselect from '@riophae/vue-treeselect'
 import { listResources, getResources, delResources, addResources, updateResources } from "@/api/business/resources"
 import { listProject } from '@/api/business/project'
-import { listAssignment } from '@/api/business/assignment'
+import { listAllAssignment} from '@/api/business/assignment'
+import AddAssignmentDialog from '@/views/business/assignment/addAssignmentDialog.vue'
 
 export default {
-  components: { Treeselect, Splitpanes, Pane },
+  components: { AddAssignmentDialog, Treeselect, Splitpanes, Pane },
   data() {
     return {
       filterText: "",
-      form: {},
+      form: {
+        state: 0,
+      },
       rules: {
         imgName: [
           { required: true, message: "图片名称不能为空", trigger: "blur" }
@@ -227,6 +237,7 @@ export default {
       title: "",
       open: false,
       data: [],
+      isPorject: [],
       defaultProps: {
         children: "children",
         label: "label",
@@ -237,54 +248,52 @@ export default {
       assignmentOptions: [],
       selectedAssignmentName: '',
       selectedProjectName: '',
-      items: [
-        {
-          name: '好吃的汉堡',
-          image: 'https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png'
-        },
-        {
-          name: '美味的披萨',
-          image: 'https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png'
-        },
-        {
-          name: '好吃的汉堡',
-          image: 'https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png'
-        },
-        {
-          name: '美味的披萨',
-          image: 'https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png'
-        },
-        {
-          name: '好吃的汉堡',
-          image: 'https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png'
-        },
-        {
-          name: '美味的披萨',
-          image: 'https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png'
-        }
-      ]
+      assignmentForm: {},
+      isAddAssignmentDialogOpen: false,
+      tempProjectId: null
     };
   },
   created() {
+    const id = this.$route.query.id;
+    const projectId = this.$route.query.projectId;
     this.getResourcesTree().then(() => {
-      this.setDefaultSelectedNode();
+      this.setDefaultSelectedNode(id, projectId);
     });
   },
   methods: {
+    addAssignment(node) {
+      this.assignmentForm.projectId = node.data.id;
+      this.isProject = true;
+      this.tempProjectId = node.data.id;
+      this.isAddAssignmentDialogOpen = true;
+    },
+
+    getRelativePath(fullPath) {
+      const publicPath = 'public/';
+      const index = fullPath.indexOf(publicPath);
+
+      if (index !== -1) {
+        return fullPath.substring(index + publicPath.length);
+      }
+
+      return '';
+    },
+
+    handleAddAssignmentSubmit() {
+      console.log(this.tempProjectId)
+      this.getResourcesTree().then(() => {
+        this.setDefaultSelectedNode(null, this.tempProjectId);
+      });
+    },
+
     handleChange(file, fileList) {
-      console.log(file)
-      console.log(fileList)
+
       this.fileList = fileList
     },
     handleRemove(file, fileList) {
-      console.log()
-      // this.fileList = this.fileList.filter(item => item.uid !== file.uid);
-      console.log(file, fileList)
-      console.log(this.fileList)
       this.fileList = fileList
     },
-    handlePreview(file) {
-      console.log(file)
+    handlePreview() {
     },
     handleBeforeUpload(file) {
       const isImage = file.type.startsWith('image/');
@@ -312,12 +321,13 @@ export default {
       this.selectedIndex = index;
     },
     toggleSelectCard(index) {
+      console.log(index)
       const selectedIndex = this.selectedIndex;
       const selectedIndexPos = selectedIndex.indexOf(index);
       if (selectedIndexPos === -1) {
-        selectedIndex.push(index);
+        this.selectedIndex.push(index);
       } else {
-        selectedIndex.splice(selectedIndexPos, 1);
+        this.selectedIndex.splice(selectedIndexPos, 1);
       }
     },
     handleNodeClick(data, node, component) {
@@ -327,9 +337,10 @@ export default {
       } else {
         tree.setCurrentKey(node.key);
         this.currentNode = node.key
-        this.selectedAssignmentName = data.label; // 二级菜单名称
-        this.selectedProjectName = node.parent.data.label; // 父级菜单名称
+        this.selectedAssignmentName = data.label;
+        this.selectedProjectName = node.parent.data.label;
       }
+      this.getList()
     },
     handleCheckChange(data, checked, indeterminate) {
       const tree = this.$refs.tree;
@@ -347,9 +358,9 @@ export default {
         tree.setCurrentKey(node.data.id);
       }
     },
-    getList(nodeId) {
+    getList() {
       this.loading = true;
-      this.queryParams.assignmentId = nodeId
+      this.queryParams.assignmentId = this.currentNode
       listResources(this.queryParams).then(response => {
         this.resourcesList = response.rows;
         this.total = response.total;
@@ -361,9 +372,11 @@ export default {
       const projectMap = new Map(
         projectResponse.rows.map(item => [item.id, { id: item.id, label: item.projectName, children: [] }])
       );
-
-      const assignmentResponse = await listAssignment();
-      assignmentResponse.rows.forEach(item => {
+      const queryParams = {
+        orderByColumn: 'id'
+      }
+      const assignmentResponse = await listAllAssignment(queryParams);
+      assignmentResponse.data.forEach(item => {
         const assignment = { id: item.id, label: item.assignmentName, state: item.state };
         const project = projectMap.get(item.projectId);
         if (project) {
@@ -372,12 +385,16 @@ export default {
       });
 
       this.data = Array.from(projectMap.values());
-      console.log(this.data);
     },
-    setDefaultSelectedNode(id) {
+      setDefaultSelectedNode(id, projectId) {
       let checkedId = null
       if (id) {
         checkedId = id;
+      } else if (projectId) {
+        const projectNode = this.data.find(project => project.id == projectId);
+        if (projectNode && projectNode.children && projectNode.children.length > 0) {
+          checkedId = projectNode.children[0].id;
+        }
       } else {
         for (const project of this.data) {
           if (project.children && project.children.length > 0) {
@@ -386,11 +403,22 @@ export default {
           }
         }
       }
+      this.currentNode = checkedId
+      for (const parentNode of this.data) {
+        if (parentNode.children && parentNode.children.length > 0) {
+          const childNode = parentNode.children.find(child => child.id === checkedId);
+          if (childNode) {
+            this.selectedAssignmentName = childNode.label;
+            this.selectedProjectName = parentNode.label;
+            break;
+          }
+        }
+      }
       this.$nextTick(() => {
         this.currentNode = checkedId
         this.$refs.tree.setCurrentKey(checkedId);
       });
-      this.getList(checkedId);
+      this.getList();
     },
     cancel() {
       this.open = false;
@@ -471,8 +499,17 @@ export default {
         }
       });
     },
+    handleDeleteBatch() {
+      this.$modal.confirm('是否确认删除这些资源？').then(() => {
+        console.log('before delete');
+        return delResources(this.selectedIndex);
+      }).then(() => {
+        this.getList();
+        this.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    },
     handleDelete(row) {
-      const ids = row.id || this.ids;
+      const ids = row.id;
       this.$modal.confirm('是否确认删除资源编号为"' + ids + '"的数据项？').then(function() {
         return delResources(ids);
       }).then(() => {
@@ -519,7 +556,6 @@ export default {
 }
 
 .card-container {
-  height: 850px;
   overflow-y: auto;
   margin: 10px 0;
 }

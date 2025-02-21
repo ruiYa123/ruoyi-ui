@@ -2,12 +2,14 @@
   <div class="app-container">
     <el-row :gutter="20">
       <splitpanes :horizontal="this.$store.getters.device === 'mobile'" class="default-theme">
-        <pane size="60" style="padding-right: 10px">
+        <pane size="40" style="padding-right: 10px">
           <el-row :gutter="10" style="margin-bottom: 10px">
             <el-col :span="8">
               <el-button type="success" :class="{'success-active': queryParams.state === 1}" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="handleStateQuery(1)">
                 <div style="display: flex; flex-direction: column; align-items: center;">
-                  <i class="el-icon-finished" style="font-size: 32px;"></i>
+                  <el-badge :value="completedCount" :max="99" :hidden="completedCount == 0 || completedCount == null" class="custom-badge">
+                    <i class="el-icon-finished" style="font-size: 32px;"></i>
+                  </el-badge>
                   <span style="font-size: 14px; margin-top: 5px;">已训练任务</span>
                 </div>
               </el-button>
@@ -15,7 +17,9 @@
             <el-col :span="8">
               <el-button :class="{'primary-active': queryParams.state === 2}" type="primary" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="handleStateQuery(2)">
                 <div style="display: flex; flex-direction: column; align-items: center;">
-                  <i class="el-icon-time" style="font-size: 32px;"></i>
+                  <el-badge :value="queuedCount" :max="99" :hidden="queuedCount == 0 || queuedCount == null" class="custom-badge">
+                    <i class="el-icon-time" style="font-size: 32px;"></i>
+                  </el-badge>
                   <span style="font-size: 14px; margin-top: 5px;">队列中任务</span>
                 </div>
               </el-button>
@@ -23,7 +27,9 @@
             <el-col :span="8">
               <el-button :class="{'info-active': queryParams.state === 0}" type="info" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="handleStateQuery(0)">
                 <div style="display: flex; flex-direction: column; align-items: center;">
-                  <i class="el-icon-wallet" style="font-size: 32px;"></i>
+                  <el-badge :value="unstartedCount" :max="99" :hidden="unstartedCount == 0 || unstartedCount == null" class="custom-badge">
+                    <i class="el-icon-wallet" style="font-size: 32px;"></i>
+                  </el-badge>
                   <span style="font-size: 14px; margin-top: 5px;">未训练任务</span>
                 </div>
               </el-button>
@@ -109,19 +115,26 @@
             :total="total"
             :page.sync="queryParams.pageNum"
             :limit.sync="queryParams.pageSize"
-            @pagination="getList"
+            @pagination="getListPage"
           />
         </pane>
-        <pane size="40">
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 24px">
-            {{ assignmentDetail.assignmentName }}
+        <pane size="60">
+          <div style="display: flex; justify-content: flex-end; align-items: center;">
+            <div style="flex-grow: 1; font-size: 24px; font-weight: bold">
+              {{ assignmentDetail.assignmentName }}
+            </div>
             <el-button
               type="primary"
               plain
-              style="margin-left: auto;"
+              @click="handleAddResource(assignmentDetail)"
+            >添加资源</el-button>
+            <el-button
+              type="primary"
+              plain
               @click="handleUpdate(assignmentDetail)"
             >修改配置</el-button>
           </div>
+
           <el-divider></el-divider>
           <el-descriptions :column="2" border v-loading="loading">
             <el-descriptions-item label="所属项目" :span="2">
@@ -174,14 +187,14 @@
               <div class="container">
                 <el-progress type="circle" :percentage="progress" style="margin: 10px"></el-progress>
                 <el-card class="box-card">
-                  <div slot="header" class="clearfix">
+                  <div slot="header" class="clearfix" style="font-size: 20px; font-weight: bold">
                     <span>训练日志</span>
                     <el-button style="float: right; padding: 3px 0" type="text">清空日志</el-button>
                   </div>
-                  <!-- 设置固定高度和滚动条 -->
-                  <div class="card-content">
-                    <div v-for="o in 20" :key="o" class="text item">
-                      {{ '日志内容 ' + o }}
+                  <div class="card-content"  @scroll="handleScroll">
+                    <div v-for="trainLog in trainLogs" :key="trainLog.index" class="text item">
+                      <span>{{ trainLog.content }}</span>
+                      <span class="create-time">{{ trainLog.createTime }}</span>
                     </div>
                   </div>
                 </el-card>
@@ -189,16 +202,30 @@
             </el-collapse-item>
             <el-collapse-item name="2" title="训练记录">
               <div style="margin-bottom: 20px">
-                <el-table v-loading="trainLoading" :data="trainList" @selection-change="handleSelectionChange">
-                  <el-table-column label="状态" align="center" prop="state">
+                <el-table
+                  ref="trainTable"
+                  v-loading="trainLoading"
+                  :data="trainList"
+                  @selection-change="handleSelectionChange"
+                  @row-click="handleTrainRowClick"
+                  highlight-current-row
+                >
+                <el-table-column label="轮次" align="center" width="80">
                     <template slot-scope="scope">
-                      <span v-if="scope.row.state === '0'">训练中</span>
-                      <span v-else-if="scope.row.state === '1'">成功</span>
-                      <span v-else-if="scope.row.state === '2'">失败</span>
+                      {{ trainTotal - (trainQueryParams.pageNum - 1) * trainQueryParams.pageSize - scope.$index }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="状态" width="70px" align="center" prop="state">
+                    <template slot-scope="scope">
+                      <span v-if="scope.row.state === 1">训练中</span>
+                      <span v-else-if="scope.row.state === 2">成功</span>
+                      <span v-else-if="scope.row.state === 0">失败</span>
                       <span v-else>未知状态</span>
                     </template>
                   </el-table-column>
-                  <el-table-column label="进度" align="center" prop="progress" />
+                  <el-table-column label="进度" width="60px" align="center" prop="progress" />
+                  <el-table-column label="训练开始时间" align="center" prop="createTime" />
+                  <el-table-column label="训练结束时间" align="center" prop="updateTime" />
                   <el-table-column label="备注" align="center" prop="description" />
                 </el-table>
                 <pagination
@@ -206,7 +233,8 @@
                   :total="trainTotal"
                   :page.sync="trainQueryParams.pageNum"
                   :limit.sync="trainQueryParams.pageSize"
-                  @pagination="getTrainList"
+                  :page-sizes="[5,10,15,20]"
+                  @pagination="getTrainList(null)"
                 />
               </div>
             </el-collapse-item>
@@ -214,72 +242,32 @@
         </pane>
       </splitpanes>
     </el-row>
-    <el-dialog :title="title" :visible.sync="open" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="150px">
-        <el-form-item label="任务名称" prop="assignmentName">
-          <el-input v-model="form.assignmentName" placeholder="请输入任务名称" />
-        </el-form-item>
-        <el-form-item v-if="this.title === '添加任务'" label="所属项目" prop="projectId">
-          <el-select v-model="form.projectId" placeholder="请选择所属项目">
-            <el-option
-              v-for="[id, projectName] in projectOptions"
-              :key="id"
-              :label="projectName"
-              :value="id">
-            </el-option>
-          </el-select>
-
-        </el-form-item>
-        <el-form-item label="关联模型" prop="modelId">
-          <el-select v-model="form.modelId" placeholder="请选择所属项目">
-            <el-option
-              v-for="[id, modelName] in modelOptions"
-              :key="id"
-              :label="modelName"
-              :value="id">
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="预训练模式" prop="pretrainMode">
-          <el-input v-model="form.pretrainMode" placeholder="请输入预训练模式" />
-        </el-form-item>
-        <el-form-item label="训练次数" prop="epoch">
-          <el-input v-model="form.epoch" placeholder="请输入训练次数" />
-        </el-form-item>
-        <el-form-item label="批大小" prop="batchSize">
-          <el-input v-model="form.batchSize" placeholder="请输入批大小" />
-        </el-form-item>
-        <el-form-item label="图像大小" prop="imgSize">
-          <el-input v-model="form.imgSize" placeholder="请输入图像大小" />
-        </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
+    <add-assignment-dialog
+      :open.sync="open"
+      :title="title"
+      :form.sync="form"
+      :on-submit="getList"
+      :is-project="isProject"
+    />
   </div>
 </template>
 
 <script>
 import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
-import { listModel } from '@/api/business/model';
-import { listProject } from '@/api/business/project';
+import { getModel, listModel } from '@/api/business/model'
+import { getProject, listProject } from '@/api/business/project'
 import {
-  addAssignment,
   delAssignment, getAssignment,
   getStateCounts,
   listAssignment,
-  updateAssignment
 } from '@/api/business/assignment'
-import { listTrain } from '@/api/business/train'
+import { getTrain, listTrain } from '@/api/business/train'
+import AddAssignmentDialog from '@/views/business/assignment/addAssignmentDialog.vue'
+import { listTrainLog } from '@/api/business/trainLog'
 
 export default {
-  components: { Splitpanes, Pane },
+  components: { Splitpanes, Pane, AddAssignmentDialog },
   data() {
     return {
       assignmentDetail: {},
@@ -292,8 +280,16 @@ export default {
       trainQueryParams: {
         assignmentId: null,
         pageNum: 1,
-        pageSize: 10
+        pageSize: 5,
+        orderByColumn: 'id'
       },
+      trainLogQueryParams: {
+        assignmentTrainId: null,
+        pageNum: 1,
+        pageSize: 10,
+        orderByColumn: 'id'
+      },
+      isProject: false,
       // 选中数组
       ids: [],
       // 非单个禁用
@@ -330,34 +326,18 @@ export default {
       },
       // 表单参数
       form: {},
-      modelOptions: new Map(),
-      projectOptions: new Map(),
-      // 表单校验
-      rules: {
-        assignmentName: [
-          { required: true, message: "任务名称不能为空", trigger: "blur" }
-        ],
-        projectId: [
-          { required: true, message: "关联的项目不能为空", trigger: "blur" }
-        ],
-        modelId: [
-          { required: true, message: "关联的模型不能为空", trigger: "blur" }
-        ],
-        pretrainMode: [
-          { required: true, message: "预训练模式不能为空", trigger: "blur" }
-        ],
-        epoch: [
-          { required: true, message: "训练次数不能为空", trigger: "blur" }
-        ],
-        batchSize: [
-          { required: true, message: "批大小不能为空", trigger: "blur" }
-        ],
-        imgSize: [
-          { required: true, message: "图像大小不能为空", trigger: "blur" }
-        ],
-      },
-      activeName: ["1", "2"]
+      modelOptions: [],
+      projectOptions: [],
+      activeName: ["1", "2"],
+      trainLogs: {},
+      trainLogTotal: 0,
+      selectedTrainRecord: null
     };
+  },
+  beforeDestroy() {
+    if (this.fetchLogsInterval) {
+      clearInterval(this.fetchLogsInterval);
+    }
   },
   created() {
     Promise.all([this.getProjectList(), this.getModelList()])
@@ -365,20 +345,43 @@ export default {
         this.queryParams.state = this.$route.query.state ? parseInt(this.$route.query.state) : 1
         const id = this.$route.query.id;
         this.getList(id);
+        this.startFetchingLogs();
       });
   },
   methods: {
     /** 查询任务列表 */
-    getList(id) {
+    getListPage() {
+      this.getList(null, this.queryParams.state)
+    },
+    getList(id, state) {
+      this.selectedTrainRecord = null
+      this.trainLogs = []
       this.loading = true;
+      if (state) {
+        this.queryParams.state = state
+      }
       listAssignment(this.queryParams).then(response => {
-        this.assignmentList = response.rows;
+        if(response.rows.length !== 0) {
+          this.assignmentList = response.rows;
+        }
+        console.log(this.assignmentList)
         this.total = response.total;
-        if (id != null) {
-          console.log(this.assignmentList.find(e=> e.id === parseInt(id)))
-          this.handleRowClick(this.assignmentList.find(e=> e.id === parseInt(id)));
-        } else {
-          this.handleRowClick(this.assignmentList[0])
+        if (this.assignmentList.length > 0) {
+          if (id != null) {
+            let find = this.assignmentList.find(e => e.id === parseInt(id))
+            if (find) {
+              this.handleRowClick(find);
+            } else {
+              if (this.queryParams.pageNum === Math.ceil(this.total / this.queryParams.pageSize)) {
+                this.$modal.msgWarning('未找到此任务')
+              } else {
+                this.queryParams.pageNum++
+                this.getList(id)
+              }
+            }
+          } else {
+            this.handleRowClick(this.assignmentList[0])
+          }
         }
         getStateCounts().then(res => {
           this.unstartedCount = res.data[0]
@@ -388,38 +391,116 @@ export default {
         })
       });
     },
+    handleTrainRowClick(row) {
+      this.selectedTrainRecord = row;
+      this.$refs.trainTable.setCurrentRow(row);
+      this.progress = row.progress;
+      this.getTrainLog(row.id);
+    },
+    getTrainLog(trainId) {
+      this.trainLogQueryParams = {
+        assignmentTrainId: trainId,
+          pageNum: 1,
+          pageSize: 10,
+          orderByColumn: 'id'
+      };
+      listTrainLog(this.trainLogQueryParams).then(res => {
+        this.trainLogs = res.rows
+        this.trainLogTotal = res.total;
+      })
+    },
+    startFetchingLogs() {
+      this.fetchLogsInterval = setInterval(() => {
+        if (this.selectedTrainRecord) {
+          getTrain(this.selectedTrainRecord.id).then(res => {
+            this.progress = res.data.progress
+          })
+          const tempTrainLogQueryParams = {
+            assignmentTrainId: this.selectedTrainRecord.id,
+            pageNum: 1,
+            pageSize: 10,
+            orderByColumn: 'id'
+          }
+          listTrainLog(tempTrainLogQueryParams).then(res => {
+            const newLogs = res.rows;
+            const existingIds = this.trainLogs.map(log => log.id);
+            const uniqueNewLogs = newLogs.filter(log => !existingIds.includes(log.id));
+            this.trainLogs = [...uniqueNewLogs, ...this.trainLogs];
+          });
+        }
+      }, 2000);
+    },
+    handleScroll(event) {
+      const container = event.target;
+      const bottomThreshold = 3 * 40;
+
+      if (container.scrollHeight - container.scrollTop - container.clientHeight <= bottomThreshold) {
+        this.loadMoreLogs();
+      }
+    },
+
+    loadMoreLogs() {
+      if (this.trainLogQueryParams.loading || this.trainLogs.length >= this.trainLogTotal) {
+        return;
+      }
+
+      this.trainLogQueryParams.pageNum += 1;
+      this.trainLogQueryParams.loading = true;
+
+      listTrainLog(this.trainLogQueryParams).then(res => {
+        this.trainLogs = [...this.trainLogs, ...res.rows];
+        this.trainLogTotal = res.total;
+        this.trainLogQueryParams.loading = false;
+      }).catch(() => {
+        this.trainLogQueryParams.loading = false;
+      });
+    },
     getTrainList(id) {
       this.trainLoading = true;
       this.trainQueryParams.assignmentId = id;
+      this.selectedTrainRecord = null
+      this.trainLogs = []
       listTrain(this.trainQueryParams).then(response => {
         this.trainList = response.rows;
         this.trainTotal = response.total;
         if (this.trainList.length > 0) {
-          let lastTrain = this.trainList[this.trainList.length - 1];
-          this.progress = lastTrain.progress
+          this.selectedTrainRecord = this.trainList[0];
+          this.progress = this.selectedTrainRecord.progress
+          this.getTrainLog(this.selectedTrainRecord.id)
+          this.$refs.trainTable.setCurrentRow(this.selectedTrainRecord);
         } else {
           this.progress = 0
         }
         this.trainLoading = false;
       });
     },
-    getProjectName(projectId) {
-      return this.projectOptions.get(projectId)
+    getProjectName(id) {
+      if (id) {
+        const project = this.projectOptions.find(option => option.id === id);
+        return project ? project.name : null;
+      }
     },
-    getModelName(modelId) {
-      return this.modelOptions.get(modelId)
+    getModelName(id) {
+      if (id) {
+        const model = this.modelOptions.find(option => option.id === id);
+        return model ? model.name : null;
+      }
     },
     getModelList() {
       listModel().then(response=> {
-        this.modelOptions = new Map(
-          response.rows.map(item => [item.id, item.modelName]))
+        this.modelOptions = response.rows.map(item => ({
+          id: item.id,
+          name: item.modelName
+        }))
       })
     },
     getProjectList() {
       listProject().then(response => {
-        this.projectOptions = new Map(
-          response.rows.map(item => [item.id, item.projectName]))
-      })
+        this.projectOptions = response.rows.map(item => ({
+          id: item.id,
+          name: item.projectName
+        }));
+      });
     },
     // 取消按钮
     cancel() {
@@ -441,10 +522,14 @@ export default {
       this.resetForm("form");
     },
     handleRowClick(row) {
+      this.selectedTrainRecord = null
+      this.trainLogs = []
+      this.$refs.assignmentTable.setCurrentRow(row);
       this.activeName = [];
       this.assignmentDetail = { ...row };
-      this.$refs.assignmentTable.setCurrentRow(row);
-      this.getTrainList(row.id)
+      if (row) {
+        this.getTrainList(row.id)
+      }
 
       setTimeout(() => {
         this.activeName = ["1", "2"];
@@ -467,7 +552,7 @@ export default {
     // 多选框选中数据
     handleSelectionChange(selection) {
       this.ids = selection.map(item => item.id)
-      this.single = selection.length!==1
+      this.single = selection.length !== 1
       this.multiple = !selection.length
     },
     /** 新增按钮操作 */
@@ -475,47 +560,41 @@ export default {
       this.reset();
       this.open = true;
       this.title = "添加任务";
+      this.isProject = false
+    },
+    handleAddResource(assignmentDetail) {
+      this.$router.push({
+        path: '/resources',
+        query: {
+          id: assignmentDetail.id,
+        }
+      });
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
-      const id = row.id || this.ids
+      const id = row.id || this.ids;
       this.title = "修改任务";
+      this.isProject = true
       getAssignment(id).then(response => {
         this.form = response.data;
         this.open = true;
       });
     },
     /** 提交按钮 */
-    submitForm() {
-      this.$refs["form"].validate(valid => {
-        if (valid) {
-          if (this.form.id != null) {
-            updateAssignment(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
-          } else {
-            addAssignment(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.open = false;
-              this.queryParams.state = 0
-              this.getList();
-            });
-          }
-        }
-      });
+    handleCancel() {
+      this.open = false;
+      this.reset();
     },
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids;
-      this.$modal.confirm('是否确认删除任务：' + row.assignmentName + '?').then(function() {
+      this.$modal.confirm('是否确认删除任务：' + row.assignmentName + '?').then(function () {
         return delAssignment(ids);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");
-      }).catch(() => {});
+      }).catch(() => { });
     },
     /** 导出按钮操作 */
     handleExport() {
@@ -562,13 +641,25 @@ export default {
 }
 
 .card-content {
-  max-height: 200px; /* 设置最大高度 */
-  overflow-y: auto;  /* 启用垂直滚动条 */
+  height: 200px;
+  overflow-y: auto;
 }
 .text.item {
   padding: 8px 0;
   border-bottom: 1px solid #ebeef5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
+
+.create-time {
+  color: #bfbfbf; /* 浅灰色 */
+  font-size: 12px; /* 较小的字体 */
+  text-align: right; /* 右对齐文本 */
+  flex-shrink: 0; /* 防止时间被压缩 */
+  margin-left: 10px; /* 与内容之间的间距 */
+}
+
 
 .container {
   display: flex;
@@ -581,9 +672,22 @@ export default {
 }
 
 .box-card {
-  flex: 0 0 70%;
+  flex: 0 0 80%;
   margin-left: 20px;
 }
 
+.collapse-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.custom-badge ::v-deep.el-badge__content {
+  background-color: #ec6d6d;
+  //min-width: 25px;
+}
 
 </style>

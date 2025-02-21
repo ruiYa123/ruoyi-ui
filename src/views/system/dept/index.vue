@@ -194,7 +194,7 @@ export default {
       // 表单校验
       rules: {
         parentId: [
-          { required: true, message: "上级部门不能为空", trigger: "blur" }
+          { required: false, message: "上级部门不能为空", trigger: "blur" }
         ],
         deptName: [
           { required: true, message: "部门名称不能为空", trigger: "blur" }
