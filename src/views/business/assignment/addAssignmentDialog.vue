@@ -15,7 +15,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="关联模型" prop="modelId">
-        <el-select v-model="localForm.modelId" placeholder="请选择所属项目">
+        <el-select v-model="localForm.modelId" placeholder="请选择关联模型">
           <el-option
             v-for="model in modelOptions"
             :key="model.id"
@@ -25,16 +25,22 @@
         </el-select>
       </el-form-item>
       <el-form-item label="预训练模式" prop="pretrainMode">
-        <el-input v-model="localForm.pretrainMode" placeholder="请输入预训练模式" />
+        <el-select v-model="localForm.pretrainMode" placeholder="请选择预训练模式">
+          <el-option label="N" value="N"></el-option>
+          <el-option label="S" value="S"></el-option>
+          <el-option label="M" value="M"></el-option>
+          <el-option label="L" value="L"></el-option>
+          <el-option label="X" value="X"></el-option>
+        </el-select>
       </el-form-item>
       <el-form-item label="训练次数" prop="epoch">
-        <el-input v-model="localForm.epoch" placeholder="请输入训练次数" />
+        <el-input type="number" v-model="localForm.epoch" placeholder="请输入训练次数" />
       </el-form-item>
       <el-form-item label="批大小" prop="batchSize">
-        <el-input v-model="localForm.batchSize" placeholder="请输入批大小" />
+        <el-input type="number" v-model="localForm.batchSize" placeholder="请输入批大小" />
       </el-form-item>
       <el-form-item label="图像大小" prop="imgSize">
-        <el-input v-model="localForm.imgSize" placeholder="请输入图像大小" />
+        <el-input type="number" v-model="localForm.imgSize" placeholder="请输入图像大小" />
       </el-form-item>
       <el-form-item label="描述" prop="description">
         <el-input v-model="localForm.description" type="textarea" placeholder="请输入内容" />
@@ -60,7 +66,8 @@ export default {
     isProject: false,
     onSubmit: {
       type: Function,
-      default: () => {} // 提供一个默认的空函数
+      default: () => {
+      } // 提供一个默认的空函数
     }
   },
   data() {
@@ -82,14 +89,51 @@ export default {
           { required: true, message: "预训练模式不能为空", trigger: "blur" }
         ],
         epoch: [
-          { required: true, message: "训练次数不能为空", trigger: "blur" }
+          { required: true, message: "训练次数不能为空", trigger: "blur" },
+          {
+            validator: (rule, value, callback) => {
+              const numValue = Number(value); // 转换为数字
+              if (isNaN(numValue)) {
+                callback(new Error("训练次数必须是数字"));
+              } else if (numValue < 30 || numValue > 300) {
+                callback(new Error("训练次数必须在30到300之间"));
+              } else {
+                callback();
+              }
+            },
+            trigger: 'blur'
+          }
         ],
         batchSize: [
-          { required: true, message: "批大小不能为空", trigger: "blur" }
+          { required: true, message: "批大小不能为空", trigger: "blur" },
+          {
+            validator: (rule, value, callback) => {
+              const numValue = Number(value); // 转换为数字
+              if (isNaN(numValue)) {
+                callback(new Error("批大小必须是数字"));
+              } else if (numValue >= 500) {
+                callback(new Error("批大小必须小于500"));
+              } else {
+                callback();
+              }
+            },
+            trigger: 'blur'
+          }
         ],
         imgSize: [
-          { required: true, message: "图像大小不能为空", trigger: "blur" }
-        ],
+          { required: true, message: "图像大小不能为空", trigger: "blur" },
+          {
+            validator: (rule, value, callback) => {
+              const numValue = Number(value); // 转换为数字
+              if (isNaN(numValue)) {
+                callback(new Error("图像大小必须是数字"));
+              } else {
+                callback();
+              }
+            },
+            trigger: 'blur'
+          }
+        ]
       }
     };
   },
@@ -124,7 +168,7 @@ export default {
   },
   methods: {
     getModelList() {
-      listModel().then(response=> {
+      listModel().then(response => {
         this.modelOptions = response.rows.map(item => ({
           id: item.id,
           name: item.modelName
@@ -137,7 +181,6 @@ export default {
           id: item.id,
           name: item.projectName
         }));
-
       });
     },
     submitForm() {
@@ -180,3 +223,4 @@ export default {
   }
 };
 </script>
+

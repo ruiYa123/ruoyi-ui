@@ -133,7 +133,7 @@
 
 <script>
 import { listProject, getProject, delProject, addProject, updateProject } from "@/api/business/project";
-import { listAssignment } from '@/api/business/assignment'
+import { listAllAssignment, listAssignment } from '@/api/business/assignment'
 import { mapGetters } from 'vuex'
 import AddAssignmentDialog from '@/views/business/assignment/addAssignmentDialog.vue'
 
@@ -225,8 +225,8 @@ export default {
     },
     handleAddAssignmentSubmit() {
       this.activeName = null;
-      listAssignment({projectId: this.projectDetail.id}).then(response => {
-        this.projectDetail.assignmentList = response.rows;
+      listAllAssignment({projectId: this.projectDetail.id}).then(response => {
+        this.projectDetail.assignmentList = response.data;
       });
       setTimeout(() => {
         this.projectDetail = Object.assign({}, this.projectDetail);
@@ -264,8 +264,8 @@ export default {
     handleRowClick(row) {
       this.activeName = null;
       this.$refs.projectTable.setCurrentRow(row);
-      listAssignment({projectId: row.id}).then(response => {
-        this.projectDetail.assignmentList = response.rows;
+      listAllAssignment({projectId: row.id}).then(response => {
+        this.projectDetail.assignmentList = response.data;
       });
       setTimeout(() => {
         this.projectDetail = Object.assign({}, this.projectDetail, row);

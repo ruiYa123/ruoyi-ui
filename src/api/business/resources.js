@@ -9,6 +9,14 @@ export function listResources(query) {
   })
 }
 
+export function listImages(query) {
+  return request({
+    url: '/business/resources/imagelist',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询资源详细
 export function getResources(id) {
   return request({
@@ -40,9 +48,10 @@ export function updateResources(data) {
 }
 
 // 删除资源
-export function delResources(id) {
+export function delResources(param) {
   return request({
-    url: '/business/resources/' + id,
-    method: 'delete'
+    url: '/business/resources',
+    method: 'delete',
+    params: param
   })
 }

@@ -59,7 +59,6 @@
             </el-form-item>
             <el-form-item style="margin-left: auto;">
               <div>
-<!--                <el-button type="primary" plain>配置文件上传</el-button>-->
               </div>
             </el-form-item>
           </el-form>
@@ -84,7 +83,7 @@
           <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" style="display: flex; justify-content: space-between; align-items: center;">
             <el-form-item label="资源名称" prop="roleName">
               <el-input
-                v-model="queryParams.roleName"
+                v-model="queryParams.imgName"
                 placeholder="请输入资源名称"
                 clearable
                 style="width: 240px"
@@ -94,7 +93,16 @@
             <el-form-item>
               <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
               <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+              <pagination
+                v-show="total > 0"
+                :total="total"
+                :page-sizes="[4, 8, 12, 16]"
+                :page.sync="queryParams.pageNum"
+                :limit.sync="queryParams.pageSize"
+                @pagination="getList"
+              />
             </el-form-item>
+
           </el-form>
 
           <div style="display: flex; justify-content: center;">
@@ -108,18 +116,20 @@
               <el-col
                 :span="5"
                 v-for="(item, index) in resourcesList"
-                :key="item.id"
+                :key="item.path"
                 :offset="index % 4 !== 0 ? 1 : 0"
                 style="margin-top: 5px; margin-bottom: 5px;"
               >
                 <el-card
                   :body-style="{ padding: '0px' }"
-                  v-on:click.native="toggleSelectCard(item.id)"
-                  :class="{ selected: selectedIndex.includes(item.id) }"
+                  v-on:click.native="toggleSelectCard(item.path)"
+                  :class="{ selected: selectedIndex.includes(item.path) }"
                 >
-                  <img :src="getRelativePath(item.imgPath)" class="image" />
+                  <img :src="getRelativePath(item.path)" class="image"  alt=""/>
                   <div style="padding: 14px;">
-                    <span>{{ item.imgName }}</span>
+                    <div style="height: 40px">
+                      <span >{{ item.name }}</span>
+                    </div>
                     <div class="bottom clearfix">
                       <time class="time">{{ item.createTime }}</time>
                       <el-button type="text" class="button"><i class="el-icon-delete" style="color: red" @click="handleDelete(item)" @click.stop></i> </el-button>
@@ -130,28 +140,11 @@
               </el-col>
             </el-row>
           </div>
-          <pagination
-            v-show="total>0"
-            :total="total"
-            :page.sync="queryParams.pageNum"
-            :limit.sync="queryParams.pageSize"
-            @pagination="getList"
-          />
 
           <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
             <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-              <el-form-item label="图片名称" prop="imgName">
-                <el-input v-model="form.imgName" placeholder="请输入图片名称" />
-              </el-form-item>
-              <el-form-item label="是否打标" prop="state">
-                <el-radio-group v-model="form.state">
-                  <el-radio :label="1">已打标</el-radio>
-                  <el-radio :label="0">未打标</el-radio>
-                </el-radio-group>
-              </el-form-item>
-
-              <el-form-item label="图片描述" prop="description">
-                <el-input v-model="form.description" type="textarea" placeholder="请输入内容" />
+              <el-form-item>
+                <el-button type="primary" @click="submitForm" style="float: right;">确认上传</el-button>
               </el-form-item>
               <el-form-item label="上传图片" prop="image">
                 <el-upload
@@ -166,16 +159,12 @@
                   :auto-upload="false"
                   multiple
                   :on-change="handleChange"
-                  >
+                >
                   <i class="el-icon-upload"></i>
                   <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
                 </el-upload>
               </el-form-item>
             </el-form>
-            <div slot="footer" class="dialog-footer">
-              <el-button type="primary" @click="submitForm">确 定</el-button>
-              <el-button @click="cancel">取 消</el-button>
-            </div>
           </el-dialog>
         </pane>
       </splitpanes>
@@ -194,7 +183,14 @@
 import { Splitpanes, Pane } from "splitpanes"
 import "splitpanes/dist/splitpanes.css"
 import Treeselect from '@riophae/vue-treeselect'
-import { listResources, getResources, delResources, addResources, updateResources } from "@/api/business/resources"
+import {
+  listResources,
+  getResources,
+  delResources,
+  addResources,
+  updateResources,
+  listImages
+} from '@/api/business/resources'
 import { listProject } from '@/api/business/project'
 import { listAllAssignment} from '@/api/business/assignment'
 import AddAssignmentDialog from '@/views/business/assignment/addAssignmentDialog.vue'
@@ -218,7 +214,7 @@ export default {
       fileList: [],
       queryParams: {
         pageNum: 1,
-        pageSize: 10,
+        pageSize: 8,
         imgName: null,
         assignmentId: null,
         imgPath: null,
@@ -260,7 +256,20 @@ export default {
       this.setDefaultSelectedNode(id, projectId);
     });
   },
+  mounted() {
+    this.$nextTick(() => {
+      this.$refs.uploadFile.$children[0].$refs.input.webkitdirectory = true
+    })
+  },
   methods: {
+    handleDirectoryUpload(event) {
+      const files = event.target.files;
+      this.fileList = Array.from(files).map(file => ({
+        name: file.name,
+        url: URL.createObjectURL(file),
+        raw: file
+      }));
+    },
     addAssignment(node) {
       this.assignmentForm.projectId = node.data.id;
       this.isProject = true;
@@ -268,10 +277,15 @@ export default {
       this.isAddAssignmentDialogOpen = true;
     },
 
-    getRelativePath(fullPath) {
-      const publicPath = 'public/';
-      const index = fullPath.indexOf(publicPath);
+    getFileNameFromPath(filePath) {
+      // 使用 / 或 \ 作为分隔符
+      const parts = filePath.split(/[/\\]/);
+      return parts[parts.length - 1]; // 返回最后一个部分
+   },
 
+    getRelativePath(fullPath) {
+      const publicPath = 'public\\';
+      const index = fullPath.indexOf(publicPath);
       if (index !== -1) {
         return fullPath.substring(index + publicPath.length);
       }
@@ -280,7 +294,6 @@ export default {
     },
 
     handleAddAssignmentSubmit() {
-      console.log(this.tempProjectId)
       this.getResourcesTree().then(() => {
         this.setDefaultSelectedNode(null, this.tempProjectId);
       });
@@ -308,6 +321,7 @@ export default {
 
     changeState(state) {
       this.queryParams.state = state;
+      this.queryParams.pageNum = 1
       this.getList();
     },
     filterNode(value, data) {
@@ -345,7 +359,7 @@ export default {
     handleCheckChange(data, checked, indeterminate) {
       const tree = this.$refs.tree;
       const node = tree.getNode(data);
-
+      this.queryParams.pageNum = 1
       if (node.level === 1) {
         tree.setChecked(node.data.id, false, true);
       }
@@ -360,8 +374,10 @@ export default {
     },
     getList() {
       this.loading = true;
-      this.queryParams.assignmentId = this.currentNode
-      listResources(this.queryParams).then(response => {
+      const params = this.queryParams
+      params.assignmentName = this.selectedAssignmentName
+      params.projectName = this.selectedProjectName
+      listImages(params).then(response => {
         this.resourcesList = response.rows;
         this.total = response.total;
         this.loading = false;
@@ -501,7 +517,6 @@ export default {
     },
     handleDeleteBatch() {
       this.$modal.confirm('是否确认删除这些资源？').then(() => {
-        console.log('before delete');
         return delResources(this.selectedIndex);
       }).then(() => {
         this.getList();
@@ -509,13 +524,20 @@ export default {
       }).catch(() => {});
     },
     handleDelete(row) {
-      const ids = row.id;
-      this.$modal.confirm('是否确认删除资源编号为"' + ids + '"的数据项？').then(function() {
-        return delResources(ids);
+      this.$modal.confirm('是否确认删除资源："' + row.name + '"的数据项？').then(() => {
+        const params = {
+          paths: row.path // 初始化一个数组
+        };
+
+        // 发送删除请求
+        return delResources(params);
       }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => {});
+        this.getList(); // 刷新列表
+        this.$modal.msgSuccess("删除成功"); // 显示成功消息
+      }).catch((error) => {
+        // 处理错误
+        this.$modal.msgError("删除失败: " + (error.message || error)); // 显示错误消息
+      });
     },
     handleExport() {
       this.download('business/resources/export', {

@@ -32,6 +32,27 @@ export function getAssignment(id) {
   })
 }
 
+export function startAssignment(id) {
+  return request({
+    url: '/business/assignment/start/' + id,
+    method: 'get',
+  })
+}
+
+export function stopAssignment(id) {
+  return request({
+    url: '/business/assignment/stop/' + id,
+    method: 'get',
+  })
+}
+
+export function startPrioritizeAssignment(id) {
+  return request({
+    url: '/business/assignment/startPrioritize/' + id,
+    method: 'get',
+  })
+}
+
 // 新增任务
 export function addAssignment(data) {
   return request({

@@ -4,8 +4,8 @@
       <splitpanes :horizontal="this.$store.getters.device === 'mobile'" class="default-theme">
         <pane size="40" style="padding-right: 10px">
           <el-row :gutter="10" style="margin-bottom: 10px">
-            <el-col :span="8">
-              <el-button type="success" :class="{'success-active': queryParams.state === 1}" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="handleStateQuery(1)">
+            <el-col :span="6">
+              <el-button type="success" :class="{'success-active': queryParams.state === 0}" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="handleStateQuery(0)">
                 <div style="display: flex; flex-direction: column; align-items: center;">
                   <el-badge :value="completedCount" :max="99" :hidden="completedCount == 0 || completedCount == null" class="custom-badge">
                     <i class="el-icon-finished" style="font-size: 32px;"></i>
@@ -14,20 +14,30 @@
                 </div>
               </el-button>
             </el-col>
-            <el-col :span="8">
-              <el-button :class="{'primary-active': queryParams.state === 2}" type="primary" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="handleStateQuery(2)">
+            <el-col :span="6">
+              <el-button :class="{'primary-active': queryParams.state === 1}" type="primary" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="handleStateQuery(1)">
                 <div style="display: flex; flex-direction: column; align-items: center;">
-                  <el-badge :value="queuedCount" :max="99" :hidden="queuedCount == 0 || queuedCount == null" class="custom-badge">
+                  <el-badge :value="trainingCount" :max="99" :hidden="trainingCount == 0 || trainingCount == null" class="custom-badge">
+                    <i class="el-icon-sort" style="font-size: 32px;"></i>
+                  </el-badge>
+                  <span style="font-size: 14px; margin-top: 5px;">训练中任务</span>
+                </div>
+              </el-button>
+            </el-col>
+            <el-col :span="6">
+              <el-button :class="{'info-active': queryParams.state === 2}" type="info" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="handleStateQuery(2)">
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <el-badge :value="queuedCount" :max="99" :hidden="queuedCount === 0 || queuedCount == null" class="custom-badge">
                     <i class="el-icon-time" style="font-size: 32px;"></i>
                   </el-badge>
                   <span style="font-size: 14px; margin-top: 5px;">队列中任务</span>
                 </div>
               </el-button>
             </el-col>
-            <el-col :span="8">
-              <el-button :class="{'info-active': queryParams.state === 0}" type="info" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="handleStateQuery(0)">
+            <el-col :span="6">
+              <el-button :class="{'warning-active': queryParams.state === 3}" type="warning" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="handleStateQuery(3)">
                 <div style="display: flex; flex-direction: column; align-items: center;">
-                  <el-badge :value="unstartedCount" :max="99" :hidden="unstartedCount == 0 || unstartedCount == null" class="custom-badge">
+                  <el-badge :value="unstartedCount" :max="99" :hidden="unstartedCount === 0 || unstartedCount == null" class="custom-badge">
                     <i class="el-icon-wallet" style="font-size: 32px;"></i>
                   </el-badge>
                   <span style="font-size: 14px; margin-top: 5px;">未训练任务</span>
@@ -167,14 +177,21 @@
             <el-collapse-item name="1" title="当前训练">
               <div style="margin-bottom: 20px">
                 <el-button
+                  type="success"
+                  plain
+                  @click.stop="startPrioritizeAssignment"
+                >插队训练</el-button>
+                <el-button
+                  v-if="this.queryParams.state === 0 || this.queryParams.state===3"
                   type="primary"
                   plain
-                  @click.stop
-                >开始训练</el-button>
+                  @click.stop="startAssignment"
+                >加入训练队列</el-button>
                 <el-button
+                  v-if="this.queryParams.state === 1 || this.queryParams.state === 2"
                   type="warning"
                   plain
-                  @click.stop
+                  @click.stop="stopAssignment"
                 >停止训练</el-button>
                 <el-button
                   type="danger"
@@ -218,15 +235,15 @@
                   <el-table-column label="状态" width="70px" align="center" prop="state">
                     <template slot-scope="scope">
                       <span v-if="scope.row.state === 1">训练中</span>
-                      <span v-else-if="scope.row.state === 2">成功</span>
-                      <span v-else-if="scope.row.state === 0">失败</span>
+                      <span v-else-if="scope.row.state === 2">失败</span>
+                      <span v-else-if="scope.row.state === 0">成功</span>
+                      <span v-else-if="scope.row.state === 3">暂停</span>
                       <span v-else>未知状态</span>
                     </template>
                   </el-table-column>
                   <el-table-column label="进度" width="60px" align="center" prop="progress" />
                   <el-table-column label="训练开始时间" align="center" prop="createTime" />
                   <el-table-column label="训练结束时间" align="center" prop="updateTime" />
-                  <el-table-column label="备注" align="center" prop="description" />
                 </el-table>
                 <pagination
                   v-show="trainTotal>0"
@@ -261,6 +278,8 @@ import {
   delAssignment, getAssignment,
   getStateCounts,
   listAssignment,
+  startAssignment,
+  startPrioritizeAssignment, stopAssignment
 } from '@/api/business/assignment'
 import { getTrain, listTrain } from '@/api/business/train'
 import AddAssignmentDialog from '@/views/business/assignment/addAssignmentDialog.vue'
@@ -271,6 +290,8 @@ export default {
   data() {
     return {
       assignmentDetail: {},
+      selectedAssignmentId: null,
+
       // 遮罩层
       loading: false,
       trainLoading: false,
@@ -309,6 +330,7 @@ export default {
       completedCount: {},
       queuedCount: {},
       unstartedCount: {},
+      trainingCount: {},
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -349,6 +371,22 @@ export default {
       });
   },
   methods: {
+    stopAssignment() {
+      stopAssignment(this.selectedAssignmentId).then(() => {
+        this.getList(this.selectedAssignmentId, 3)
+      })
+    },
+    startAssignment() {
+      startAssignment(this.selectedAssignmentId).then(() => {
+        this.getList(this.selectedAssignmentId, 2)
+      })
+    },
+    startPrioritizeAssignment() {
+      this.queryParams.pageNum = 1
+      startPrioritizeAssignment(this.selectedAssignmentId).then(() => {
+        this.getList(this.selectedAssignmentId, 2)
+      })
+    },
     /** 查询任务列表 */
     getListPage() {
       this.getList(null, this.queryParams.state)
@@ -360,10 +398,12 @@ export default {
       if (state) {
         this.queryParams.state = state
       }
+      if (this.queryParams.state === 2) {
+        this.queryParams.orderByColumn = null
+      }
       listAssignment(this.queryParams).then(response => {
-        if(response.rows.length !== 0) {
-          this.assignmentList = response.rows;
-        }
+        this.queryParams.orderByColumn = 'id'
+        this.assignmentList = response.rows;
         console.log(this.assignmentList)
         this.total = response.total;
         if (this.assignmentList.length > 0) {
@@ -384,9 +424,10 @@ export default {
           }
         }
         getStateCounts().then(res => {
-          this.unstartedCount = res.data[0]
-          this.completedCount = res.data[1]
+          this.completedCount = res.data[0]
+          this.trainingCount = res.data[1]
           this.queuedCount = res.data[2]
+          this.unstartedCount = res.data[3]
           this.loading = false;
         })
       });
@@ -510,6 +551,7 @@ export default {
     // 表单重置
     reset() {
       this.form = {
+        state: null,
         id: null,
         assignmentName: null,
         projectId: null,
@@ -523,6 +565,7 @@ export default {
     },
     handleRowClick(row) {
       this.selectedTrainRecord = null
+      this.selectedAssignmentId = row.id
       this.trainLogs = []
       this.$refs.assignmentTable.setCurrentRow(row);
       this.activeName = [];
@@ -578,6 +621,7 @@ export default {
       this.isProject = true
       getAssignment(id).then(response => {
         this.form = response.data;
+        this.form.state = null;
         this.open = true;
       });
     },
@@ -633,6 +677,15 @@ export default {
 
 .info-active {
   background-color: #909399;
+  color: white;
+
+  i {
+    color: white;
+  }
+}
+
+.warning-active {
+  background-color: #FFBA00;
   color: white;
 
   i {
