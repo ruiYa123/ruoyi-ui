@@ -42,7 +42,21 @@
                     <span>{{ node.label }}</span>
                     <span v-if="node.level === 1" style="margin-left: auto;">
                       <el-button type="text" size="mini" @click="addAssignment(node)" @click.stop>
-                        <i class="el-icon-plus"></i>
+                        <i class="el-icon-plus" style="color: #13CE66"></i>
+                      </el-button>
+                      <el-button type="text" size="mini" @click="toProject(node)" @click.stop>
+                        <i class="el-icon-right"></i>
+                      </el-button>
+                    </span>
+                    <span v-if="node.level === 2" style="margin-left: auto;">
+                      <el-button type="text" size="mini" @click="removeDirectory(node)" @click.stop>
+                        <i class="el-icon-close" style="color: #FF4949"></i>
+                      </el-button>
+                      <el-button type="text" size="mini" @click="downloadFolder(node)" @click.stop>
+                        <i class="el-icon-download" style="color: #13CE66"></i>
+                      </el-button>
+                      <el-button type="text" size="mini" @click="toAssignment(node)" @click.stop>
+                        <i class="el-icon-right"></i>
                       </el-button>
                     </span>
                   </span>
@@ -54,45 +68,83 @@
         <pane size="84">
           <!-- 表单和按钮部分 -->
           <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="true" style="display: flex; justify-content: space-between; align-items: center;">
-            <el-form-item prop="roleName">
-              项目名称 -> 设备名称
+            <el-form-item style="margin-top: 20px">
+              <el-tag>
+                {{selectedProjectName}}
+              </el-tag>
+               ->
+              <el-badge :value="'未打标:' + this.resourcesList[0].unMarkedCount" @click="handleClickBadge">
+                <el-tag>
+                  {{selectedAssignmentName}}
+                </el-tag>
+              </el-badge>
             </el-form-item>
             <el-form-item style="margin-left: auto;">
               <div>
               </div>
             </el-form-item>
           </el-form>
-          <el-row :gutter="10" style="margin-bottom: 10px">
-            <el-col :span="12">
-              <el-button type="primary" :class="{'primary-active': queryParams.state === 0}" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="changeState(0)">
-                <div style="display: flex; flex-direction: column; align-items: center;">
-                  <i class="el-icon-edit-outline" style="font-size: 32px;"></i>
-                  <span style="font-size: 14px; margin-top: 5px;">未打标</span>
-                </div>
-              </el-button>
-            </el-col>
-            <el-col :span="12">
-              <el-button type="success" :class="{'success-active': queryParams.state === 1}" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="changeState(1)">
-                <div style="display: flex; flex-direction: column; align-items: center;">
-                  <i class="el-icon-finished" style="font-size: 32px;"></i>
-                  <span style="font-size: 14px; margin-top: 5px;">已打标</span>
-                </div>
-              </el-button>
-            </el-col>
-          </el-row>
+<!--          <el-row :gutter="10" style="margin-bottom: 10px">-->
+<!--            <el-col :span="12">-->
+<!--              <el-button type="primary" :class="{'primary-active': queryParams.state === 0}" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="changeState(0)">-->
+<!--                <div style="display: flex; flex-direction: column; align-items: center;">-->
+<!--                  <i class="el-icon-edit-outline" style="font-size: 32px;"></i>-->
+<!--                  <span style="font-size: 14px; margin-top: 5px;">未打标</span>-->
+<!--                </div>-->
+<!--              </el-button>-->
+<!--            </el-col>-->
+<!--            <el-col :span="12">-->
+<!--              <el-button type="success" :class="{'success-active': queryParams.state === 1}" plain style="width: 100%; padding: 20px; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;" @click="changeState(1)">-->
+<!--                <div style="display: flex; flex-direction: column; align-items: center;">-->
+<!--                  <i class="el-icon-finished" style="font-size: 32px;"></i>-->
+<!--                  <span style="font-size: 14px; margin-top: 5px;">已打标</span>-->
+<!--                </div>-->
+<!--              </el-button>-->
+<!--            </el-col>-->
+<!--          </el-row>-->
           <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" style="display: flex; justify-content: space-between; align-items: center;">
-            <el-form-item label="资源名称" prop="roleName">
-              <el-input
-                v-model="queryParams.imgName"
-                placeholder="请输入资源名称"
-                clearable
-                style="width: 240px"
-                @keyup.enter.native="handleQuery"
-              />
-            </el-form-item>
+            <div style="display: flex; align-items: center;">
+              <el-form-item label="资源名称" prop="roleName">
+                <el-input
+                  v-model="queryParams.imgName"
+                  placeholder="请输入资源名称"
+                  clearable
+                  style="width: 240px"
+                  @keyup.enter.native="handleQuery"
+                />
+              </el-form-item>
+              <el-form-item label="是否打标">
+                <el-select
+                  v-model="queryParams.state"
+                  placeholder="请选择是否打标"
+                  clearable
+                  style="width: 240px"
+                  @change="handleQuery"
+                >
+                 <el-option
+                   v-for="item in stateOptions"
+                   :key="item.state"
+                   :label="item.label"
+                   :value="item.state"
+                 ></el-option>
+                </el-select>
+              </el-form-item>
+            </div>
             <el-form-item>
               <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
               <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+            </el-form-item>
+
+
+
+          </el-form>
+          <el-row>
+            <el-col :span="12" style="display: flex; margin-top: 20px">
+              <el-button type="primary" plain @click="handleAdd">上传图片</el-button>
+              <el-button type="success" plain @click="handleDownloadAll">批量下载</el-button>
+              <el-button type="danger" @click="handleDeleteBatch" plain>批量删除</el-button>
+            </el-col>
+            <el-col :span="12">
               <pagination
                 v-show="total > 0"
                 :total="total"
@@ -101,16 +153,8 @@
                 :limit.sync="queryParams.pageSize"
                 @pagination="getList"
               />
-            </el-form-item>
-
-          </el-form>
-
-          <div style="display: flex; justify-content: center;">
-            <el-button type="primary" plain @click="handleAdd">上传图片</el-button>
-            <el-button type="success" plain>下载全部</el-button>
-            <el-button type="danger" @click="handleDeleteBatch" plain>批量删除</el-button>
-          </div>
-
+            </el-col>
+          </el-row>
           <div class="card-container">
             <el-row>
               <el-col
@@ -122,8 +166,14 @@
               >
                 <el-card
                   :body-style="{ padding: '0px' }"
-                  v-on:click.native="toggleSelectCard(item.path)"
-                  :class="{ selected: selectedIndex.includes(item.path) }"
+                  v-on:click.native="toggleSelectCard(item)"
+                  :class="{ selected: selectedIndex.includes(item) }"
+                  :style="{
+                    backgroundColor: item.jsonPath === null
+                      ? (selectedIndex.includes(item) ? '#c0b2f5' : '#f59393')
+                      : (selectedIndex.includes(item) ?'#e8e8fc' :'')
+                  }"
+
                 >
                   <img :src="getRelativePath(item.path)" class="image"  alt=""/>
                   <div style="padding: 14px;">
@@ -133,7 +183,7 @@
                     <div class="bottom clearfix">
                       <time class="time">{{ item.createTime }}</time>
                       <el-button type="text" class="button"><i class="el-icon-delete" style="color: red" @click="handleDelete(item)" @click.stop></i> </el-button>
-                      <el-button type="text" class="button"><i class="el-icon-download" style="color: green; margin-right: 5px" @click.stop></i> </el-button>
+                      <el-button type="text" class="button"><i class="el-icon-download" style="color: green; margin-right: 5px" @click.stop="handleDownload(item)"></i> </el-button>
                     </div>
                   </div>
                 </el-card>
@@ -182,14 +232,16 @@
 <script>
 import { Splitpanes, Pane } from "splitpanes"
 import "splitpanes/dist/splitpanes.css"
-import Treeselect from '@riophae/vue-treeselect'
+import Treeselect from '@riophae/vue-treeselect';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import {
   listResources,
   getResources,
   delResources,
   addResources,
   updateResources,
-  listImages
+  listImages, listAll
 } from '@/api/business/resources'
 import { listProject } from '@/api/business/project'
 import { listAllAssignment} from '@/api/business/assignment'
@@ -199,6 +251,10 @@ export default {
   components: { AddAssignmentDialog, Treeselect, Splitpanes, Pane },
   data() {
     return {
+      stateOptions: [
+        {state: 0, label: '未打标'},
+        {state: 1, label: '已打标'}
+      ],
       filterText: "",
       form: {
         state: 0,
@@ -220,7 +276,7 @@ export default {
         imgPath: null,
         imgSize: null,
         description: null,
-        state: 0,
+        state: null,
       },
       currentNode: null,
       loading: true,
@@ -262,6 +318,29 @@ export default {
     })
   },
   methods: {
+    toAssignment(assignment) {
+      console.log(assignment)
+      this.$router.push({
+        path: '/assignment',
+        query: {
+          id: assignment.data.id,
+          state: assignment.data.state
+        }
+      });
+    },
+    toProject(project) {
+      console.log(project)
+      this.$router.push({
+        path: '/project',
+        query: {
+          id: project.data.id
+        }
+      });
+    },
+    handleClickBadge() {
+      this.queryParams.state = 0
+      this.getList()
+    },
     handleDirectoryUpload(event) {
       const files = event.target.files;
       this.fileList = Array.from(files).map(file => ({
@@ -291,6 +370,67 @@ export default {
       }
 
       return '';
+    },
+    async downloadFolder(node) {
+      try {
+        const zip = new JSZip();
+        const projectName = node.parent.data.label;
+        const assignmentName = node.data.label;
+        const zipName = `${projectName}_${assignmentName}.zip`;
+
+        const response = await listAll({ projectName: projectName, assignmentName: assignmentName });
+        const files = [];
+
+        response.data.forEach(item => {
+          files.push(item.path);
+          if (item.jsonPath) files.push(item.jsonPath);
+        });
+
+        for (const filePath of files) {
+          const relativePath = this.getRelativePath(filePath).replace(/\\/g, '/');
+          const response = await fetch(`/${relativePath}`);
+          if (!response.ok) throw new Error(`无法下载文件: ${relativePath}`);
+          const blob = await response.blob();
+          const fileName = relativePath.split('/').slice(2).join('/'); // 去除项目名和任务名前的路径
+          zip.file(fileName, blob);
+        }
+
+        // 生成并下载ZIP
+        const content = await zip.generateAsync({ type: 'blob' });
+        saveAs(content, zipName);
+        this.$message.success('开始下载压缩包');
+
+      } catch (error) {
+        console.error('下载失败:', error);
+        this.$message.error('压缩包下载失败');
+      }
+    },
+    handleDownloadAll() {
+      this.selectedIndex.forEach((item, index) => {
+        setTimeout(() => {
+          this.downloadFile(item.path);
+          if (item.jsonPath) {
+            this.downloadFile(item.jsonPath);
+          }
+        }, index * 100);
+      });
+    },
+    handleDownload(row) {
+      this.downloadFile(row.path);
+      if (row.jsonPath) {
+        this.downloadFile(row.jsonPath);
+      }
+    },
+
+    downloadFile(filePath) {
+      const relativePath = this.getRelativePath(filePath); // 获取相对路径
+      const fileUrl = `${window.location.origin}/${relativePath}`; // 拼接完整 URL
+
+      // 创建下载链接
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = this.getFileNameFromPath(filePath);
+      link.click();
     },
 
     handleAddAssignmentSubmit() {
@@ -336,6 +476,7 @@ export default {
     },
     toggleSelectCard(index) {
       console.log(index)
+      console.log('select')
       const selectedIndex = this.selectedIndex;
       const selectedIndexPos = selectedIndex.indexOf(index);
       if (selectedIndexPos === -1) {
@@ -359,6 +500,7 @@ export default {
     handleCheckChange(data, checked, indeterminate) {
       const tree = this.$refs.tree;
       const node = tree.getNode(data);
+      console.log(node.data.label)
       this.queryParams.pageNum = 1
       if (node.level === 1) {
         tree.setChecked(node.data.id, false, true);
@@ -373,6 +515,7 @@ export default {
       }
     },
     getList() {
+      this.selectedIndex = []
       this.loading = true;
       const params = this.queryParams
       params.assignmentName = this.selectedAssignmentName
@@ -515,9 +658,49 @@ export default {
         }
       });
     },
+    async removeDirectory(node) {
+      try {
+        const projectName = node.parent.data.label;
+        const assignmentName = node.data.label;
+        const response = await listAll({ projectName: projectName, assignmentName: assignmentName });
+
+        // 确认删除操作
+        const confirm = await this.$modal.confirm(`是否确认删除 ${assignmentName} 的所有资源？`);
+
+        if (confirm) {
+          const path = [];
+          console.log('确认');
+
+          // 使用 for...of 循环来处理响应数据
+          for (const item of response.data) {
+            console.log(item);
+            path.push(item.path);
+            if (item.jsonPath) path.push(item.jsonPath); // 改为使用 path
+          }
+
+          console.log('准备发送');
+          await delResources({ path: path });
+
+          // 删除成功后更新列表
+          this.getList();
+          this.$modal.msgSuccess("删除成功");
+        }
+      } catch (error) {
+        console.error('删除失败:', error);
+        this.$modal.msgError("删除失败");
+      }
+    },
+
     handleDeleteBatch() {
       this.$modal.confirm('是否确认删除这些资源？').then(() => {
-        return delResources(this.selectedIndex);
+        const path = [];
+        this.selectedIndex.forEach(index => {
+          path.push(index.path)
+          if(index.jsonPath) {
+            path.push(index.jsonPath)
+          }
+        })
+        return delResources({ path: path });
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");
@@ -525,12 +708,14 @@ export default {
     },
     handleDelete(row) {
       this.$modal.confirm('是否确认删除资源："' + row.name + '"的数据项？').then(() => {
-        const params = {
-          paths: row.path // 初始化一个数组
-        };
+        const path = []
+        path.push(row.path)
+        if (row.jsonPath) {
+          path.push(row.jsonPath)
+        }
 
         // 发送删除请求
-        return delResources(params);
+        return delResources({path: path});
       }).then(() => {
         this.getList(); // 刷新列表
         this.$modal.msgSuccess("删除成功"); // 显示成功消息
@@ -574,7 +759,7 @@ export default {
 
 .selected {
   border: 1px solid #409eff;
-  box-shadow: 0 0 10px rgba(64, 158, 255, 0.5);
+  box-shadow: 0 0 50px rgba(64, 158, 255, 0.5);
 }
 
 .card-container {

@@ -198,18 +198,33 @@ export default {
     ...mapGetters(['permission_routes'])
   },
   created() {
-    this.getList();
+    const id = this.$route.query.id;
+    this.getList(id);
   },
   methods: {
-    getList() {
+    getList(id) {
       this.loading = true;
       listProject(this.queryParams).then(response => {
         this.projectList = response.rows;
         this.total = response.total;
         if (this.projectList.length > 0) {
-          this.projectDetail = this.projectList[0]
-          this.projectDetail.assignmentList = []
-          this.handleRowClick(this.projectList[0])
+          if (id != null) {
+            let find = this.projectList.find(e => e.id === parseInt(id))
+            if (find) {
+              this.handleRowClick(find)
+            } else {
+              if (this.queryParams.pageNum === Math.ceil(this.total / this.queryParams.pageSize)) {
+                this.$modal.msgWarning('未找到此任务')
+              } else {
+                this.queryParams.pageNum++
+                this.getList(id)
+              }
+            }
+          } else {
+            this.projectDetail = this.projectList[0]
+            this.projectDetail.assignmentList = []
+            this.handleRowClick(this.projectList[0])
+          }
         } else {
           this.activeName = '1';
           this.projectDetail.projectName = '暂无项目';

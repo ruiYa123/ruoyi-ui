@@ -273,7 +273,7 @@
 import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
 import { getModel, listModel } from '@/api/business/model'
-import { getProject, listProject } from '@/api/business/project'
+import { getProject, listAllProject } from '@/api/business/project'
 import {
   delAssignment, getAssignment,
   getStateCounts,
@@ -536,8 +536,8 @@ export default {
       })
     },
     getProjectList() {
-      listProject().then(response => {
-        this.projectOptions = response.rows.map(item => ({
+      listAllProject().then(response => {
+        this.projectOptions = response.data.map(item => ({
           id: item.id,
           name: item.projectName
         }));

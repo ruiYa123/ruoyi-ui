@@ -1,4 +1,4 @@
-  {
+{
   "name": "ruoyi",
   "version": "3.8.9",
   "description": "若依管理系统",
@@ -43,12 +43,13 @@
     "core-js": "3.37.1",
     "echarts": "^5.4.0",
     "element-ui": "2.15.14",
-    "file-saver": "2.0.5",
+    "file-saver": "^2.0.5",
     "fuse.js": "6.4.3",
     "highlight.js": "9.18.5",
     "js-beautify": "1.13.0",
     "js-cookie": "3.0.1",
     "jsencrypt": "3.0.0-rc.1",
+    "jszip": "^3.10.1",
     "nprogress": "0.2.0",
     "quill": "2.0.2",
     "screenfull": "5.0.2",

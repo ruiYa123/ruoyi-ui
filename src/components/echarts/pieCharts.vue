@@ -12,7 +12,8 @@ export default {
   name: 'PieChart',
   props: {
     title: String,
-    data: Array
+    data: Array,
+    unit: ''
   },
   data() {
     return {
@@ -82,7 +83,10 @@ export default {
           left: 'center'
         },
         tooltip: {
-          trigger: 'item'
+          trigger: 'item',
+          formatter: (params) => {
+            return `${params.seriesName}<br/>${params.marker} ${params.name}: ${params.value} ${this.unit}`;
+          }
         },
         legend: {
           orient: 'vertical',

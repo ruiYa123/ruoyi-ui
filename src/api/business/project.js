@@ -9,6 +9,14 @@ export function listProject(query) {
   })
 }
 
+export function listAllProject(query) {
+  return request({
+    url: '/business/project/listAll',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询项目详细
 export function getProject(id) {
   return request({

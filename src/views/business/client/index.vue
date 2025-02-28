@@ -14,15 +14,15 @@
             :style="{
               backgroundColor: selectedClientId === client.id
                 ? client.state === 0
-                  ? '#ffcccc'
+                  ? '#c0dcfc'
                   : client.state === 1
                   ? '#b7e1cd'
-                  : '#c0dcfc'
+                  : '#ffcccc'
                 : client.state === 0
-                ? '#ffebee'
+                ? '#E8F4FF'
                 : client.state === 1
                 ? '#e8f5e9'
-                : '#ECF5FF'
+                : '#ffebee'
             }"
             @click.native="selectClient(client)"
           >
@@ -62,11 +62,68 @@
                   </div>
                 </div>
               </template>
-              <!-- 饼图区域 -->
-              <div style="min-height: 600px">
-                <el-row :gutter="20" v-if="activeNames === '1'">
-                  <el-col :span="8" v-for="(data, index) in pieChartData" :key="index">
-                    <PieChart :title="data.title" :data="data.data" />
+              <!-- 分块展示 -->
+              <div style="height: 1000px">
+                <el-row :gutter="20" style="margin-bottom: 20px;">
+                  <el-col :span="24">
+                    <el-card>
+                      <el-row :gutter="20">
+                        <el-col :span="16">
+                          <el-descriptions title="系统信息" :column="2" border>
+                            <el-descriptions-item label="操作系统">{{ systemInfo.OS }} - {{ systemInfo.OS_Version }}</el-descriptions-item>
+                            <el-descriptions-item label="机器名称">{{ systemInfo.Machine_Name }}</el-descriptions-item>
+                            <el-descriptions-item label="内存大小">{{ systemInfo.RAM_total + 'MB'}}</el-descriptions-item>
+                            <el-descriptions-item label="网络状态">{{ systemInfo.Network_Status }}</el-descriptions-item>
+                          </el-descriptions>
+                        </el-col>
+                        <el-col :span="8">
+                          <PieChart  v-if="activeNames === '1'" :title="'Disk 使用情况'" :data="diskData" :unit="'MB'"/>
+                        </el-col>
+                      </el-row>
+                    </el-card>
+                  </el-col>
+                </el-row>
+
+                <el-row :gutter="20" style="margin-bottom: 20px;">
+                  <el-col :span="24">
+                    <el-card>
+                      <el-row :gutter="20">
+                        <el-col :span="8">
+                          <el-descriptions title="CPU 信息" :column="1" border>
+                            <el-descriptions-item label="CPU型号">{{ systemInfo.CPU_Model }}</el-descriptions-item>
+                            <el-descriptions-item label="CPU核心数">{{ systemInfo.CPU_core }}</el-descriptions-item>
+                            <el-descriptions-item label="CPU线程数">{{ systemInfo.CPU_threads }}</el-descriptions-item>
+                          </el-descriptions>
+                        </el-col>
+                        <el-col span="8">
+                          <PieChart  v-if="activeNames === '1'" :title="'CPU 使用情况'" :data="cpuData" :unit="'%'"/>
+                        </el-col>
+                        <el-col span="8">
+                          <PieChart  v-if="activeNames === '1'" :title="'CPU 内存使用情况'" :data="cpuMemData" :unit="'MB'"/>
+                        </el-col>
+                      </el-row>
+                    </el-card>
+                  </el-col>
+                </el-row>
+
+                <el-row :gutter="20">
+                  <el-col :span="24">
+                    <el-card>
+                      <el-row :gutter="20">
+                        <el-col :span="8">
+                          <el-descriptions title="GPU 信息" :column="1" border>
+                            <el-descriptions-item label="GPU型号">{{ systemInfo.GPU_Model }}</el-descriptions-item>
+                            <el-descriptions-item label="GPU核心数">{{ systemInfo.GPU_core }}</el-descriptions-item>
+                          </el-descriptions>
+                        </el-col>
+                        <el-col :span="8">
+                          <PieChart  v-if="activeNames === '1'" :title="'GPU 使用情况'" :data="gpuData" :unit="'%'"/>
+                        </el-col>
+                        <el-col :span="8">
+                          <PieChart  v-if="activeNames === '1'" :title="'GPU 内存使用情况'" :data="gpuMemData" :unit="'MB'"/>
+                        </el-col>
+                      </el-row>
+                    </el-card>
                   </el-col>
                 </el-row>
               </div>
@@ -218,17 +275,17 @@ export default {
   filters: {
     statusFilter(status) {
       const statusMap = {
-        0: 'danger',
+        0: 'warning',
         1: 'success',
-        2: 'warning'
+        2: 'danger'
       }
       return statusMap[status] || 'info'
     },
     statusTextFilter(status) {
       const statusMap = {
-        0: '离线',
+        0: '空闲',
         1: '训练中',
-        2: '空闲'
+        2: '离线'
       }
       return statusMap[status] || '未知'
     },
@@ -249,6 +306,24 @@ export default {
   },
   data() {
     return {
+      systemInfo: {
+        OS: '-',
+        OS_Version: '-',
+        Machine_Name: '-',
+        CPU_Model: '-',
+        GPU_Model: '-',
+        Network_Status: '-',
+        CPU_core: '_',
+        CPU_threads: '_',
+        GPU_core: '_',
+        RAM_total: '_'
+      },
+      resourceDetail: {
+        CPU_Mem: { Used_MB: 0, Total_MB: 0 },
+        GPU_Mem: { Used_MB: 0, Total_MB: 0 },
+        Disk: { Used_MB: 0, Total_MB: 0 }
+      },
+      trainProcess: '-',
       selectedClientId: 0,
       commandForm: {
         commandStr: '',
@@ -332,34 +407,34 @@ export default {
           color: '#409EFF'
         },
         {
-          label: 'CPU MEM',
-          percentage: this.calculateUsage(this.cpuMemData),
-          color: '#67C23A'
-        },
-        {
           label: 'GPU',
           percentage: this.calculateUsage(this.gpuData),
           color: '#E6A23C'
         },
         {
-          label: 'GPU MEM',
-          percentage: this.calculateUsage(this.gpuMemData),
-          color: '#F56C6C'
-        },
-        {
           label: 'DISK',
           percentage: this.calculateUsage(this.diskData),
           color: '#909399'
+        },
+        {
+          label: 'CPU MEM',
+          percentage: this.calculateUsage(this.cpuMemData),
+          color: '#67C23A'
+        },
+        {
+          label: 'GPU MEM',
+          percentage: this.calculateUsage(this.gpuMemData),
+          color: '#F56C6C'
         }
       ];
     },
     pieChartData() {
       return [
-        { title: 'CPU', data: this.cpuData },
-        { title: 'CPU MEM', data: this.cpuMemData },
-        { title: 'GPU', data: this.gpuData },
-        { title: 'GPU MEM', data: this.gpuMemData },
-        { title: 'DISK', data: this.diskData }
+        { title: 'CPU', data: this.cpuData, unit: '%' },
+        { title: 'CPU MEM', data: this.cpuMemData, unit: 'MB' },
+        { title: 'GPU', data: this.gpuData, unit: '%' },
+        { title: 'GPU MEM', data: this.gpuMemData, unit: 'MB' },
+        { title: 'DISK', data: this.diskData, unit: 'MB' }
       ];
     }
   },
@@ -371,7 +446,7 @@ export default {
   methods: {
     calculateUsage(data) {
       let tempData;
-      if (data.length === 0) {
+      if (!data || data.length === 0) {
         tempData = [{ value: 0, name: '已使用' },]
       } else {
         tempData = data
@@ -381,56 +456,117 @@ export default {
       return total > 0 ? parseFloat(((used / total) * 100).toFixed(2)) : 0;
     },
     selectClient(client) {
-      // if (this.clientStatusInterval !== null) {
-      //   this.clientStatusInterval = null
-      //   clearInterval(this.clientStatusInterval);
-      // }
       this.selectedClientId = Number(client.id);
       this.commandForm.clientName = client.name;
       this.selectedClientName = client.name
       this.fetchAndSetClientStatus(client.name);
     },
     async fetchAndSetClientStatus(clientName) {
-      if (clientName === null || clientName === '') {
-        return;
-      }
+      if (!clientName) return;
+      const status = await getClientStatus(clientName);
       try {
-        const status = await getClientStatus(clientName);
-        if (status.data.assignment) {
-          console.log(status.data.trainPercentage)
+        const clientState = status.data.mcGetClientStateFeedBack.ClientState
+        // 更新系统信息
+          this.systemInfo = {
+            OS: clientState.SystemInfo?.OS || '-',
+            RAM_total: clientState.SystemInfo?.RAM_Total_MB || '-',
+            OS_Version: clientState.SystemInfo?.OS_Version || '-',
+            Machine_Name: clientState.SystemInfo?.Machine_Name || '-',
+            CPU_Model: clientState.SystemInfo?.CPU_Model || '-',
+            GPU_Model: clientState.SystemInfo?.GPU_Model || '-',
+            Network_Status: clientState.SystemInfo?.Network_Status || '-',
+            CPU_core: clientState.ResourceUsage?.CPU.Cores || '_',
+            CPU_threads: clientState.ResourceUsage?.CPU.Threads || '_',
+            GPU_core: clientState.ResourceUsage?.GPU.Cores || '_'
+          };
+
+          // 更新资源详细信息
+          this.resourceDetail = {
+            CPU_Mem: {
+              Used_MB: status.data.ResourceUsage?.CPU?.Mem?.Used_MB || 0,
+              Total_MB: status.data.ResourceUsage?.CPU?.Mem?.Total_MB || 0
+            },
+            GPU_Mem: {
+              Used_MB: status.data.ResourceUsage?.GPU?.Mem?.Used_MB || 0,
+              Total_MB: status.data.ResourceUsage?.GPU?.Mem?.Total_MB || 0
+            },
+            Disk: {
+              Used_MB: status.data.ResourceUsage?.Disk?.Used_MB || 0,
+              Total_MB: status.data.ResourceUsage?.Disk?.Total_MB || 0
+            }
+
+          };
+          console.log(clientState)
+          console.log(clientState.ResourceUsage)
+          console.log(clientState.ResourceUsage.CPU.Usage)
+          this.cpuData = this.formatPieData(clientState.ResourceUsage.CPU.Usage);
+          this.cpuMemData = this.formatPieData(clientState.ResourceUsage.CPU.Mem.Used_MB, clientState.ResourceUsage.CPU.Mem.Total_MB);
+          this.gpuData = this.formatPieData(clientState.ResourceUsage.GPU.Usage);
+          this.gpuMemData = this.formatPieData(clientState.ResourceUsage.GPU.Mem.Used_MB, clientState.ResourceUsage.GPU.Mem.Total_MB);
+          this.diskData = this.formatPieData(clientState.ResourceUsage.Disk.Used_MB, clientState.ResourceUsage.Disk.Total_MB);
+
+          // 更新训练过程状态
+          this.trainProcess = status.data.TrainState?.Train_Process || '-';
+        } catch (e) {
+          this.systemInfo= {
+            OS: '-',
+              OS_Version: '-',
+              Machine_Name: '-',
+              CPU_Model: '-',
+              GPU_Model: '-',
+              Network_Status: '-',
+              CPU_core: '_',
+              CPU_threads: '_',
+              GPU_core: '_',
+              RAM_total: '_'
+          }
+          this.resourceDetail= {
+            CPU_Mem: { Used_MB: 0, Total_MB: 0 },
+            GPU_Mem: { Used_MB: 0, Total_MB: 0 },
+            Disk: { Used_MB: 0, Total_MB: 0 }
+          }
+          this.trainProcess= '-'
+          this.cpuData = []
+          this.cpuMemData = []
+          this.gpuData =[]
+          this.gpuMemData = []
+          this.diskData = []
+        }
+        try {
+          const trainState = status.data.mcGetTrainStateFeedBack.TrainState
+
           this.assignmentInfo = {
             assignmentName: status.data.assignmentName,
-            trainPercentage: status.data.trainPercentage,
+            trainPercentage: trainState.Train_Percentage,
             ...status.data.assignment
-          };
-        } else {
+          }
+        } catch (e) {
           this.assignmentInfo = {
-            assignmentName: '',
-            trainPercentage: 0,
-            pretrainMode: '',
-            epoch: 0,
-            batchSize: 0,
-            imgSize: 0,
-            description: ''
-          };
-        }
-        this.cpuData = this.formatPieData(status.data.cpu);
-        this.cpuMemData = this.formatPieData(status.data.cpuMem);
-        this.gpuData = this.formatPieData(status.data.gpu);
-        this.gpuMemData = this.formatPieData(status.data.gpuMem);
-        this.diskData = this.formatPieData(status.data.disk);
-      } catch (error) {
-        this.$message.error('获取客户端状态失败');
+            assignmentName: null,
+            trainPercentage: null,
+          }
       }
     },
-    formatPieData(value) {
-      if (value === 0) {
-        return []
+    formatPieData(value, total) {
+      if (total) {
+        if (total === 0) {
+          return []
+        }
+        return [
+          { value: value, name: '已使用' },
+          { value: total - value, name: '剩余' }
+        ];
+      } else {
+        value = Number(value.replace('%', ''))
+        if (value === 0) {
+          return []
+        }
+        return [
+          { value: value, name: '已使用' },
+          { value: Number((100 - value).toFixed(2)), name: '剩余' }
+        ];
       }
-      return [
-        { value: value, name: '已使用' },
-        { value: 100 - value, name: '剩余' }
-      ];
+
     },
     async sendCommand() {
       if (!this.commandForm.commandStr) {
@@ -461,14 +597,6 @@ export default {
           name: selectedClient.name,
           jsonMessage
         });
-
-        // 记录日志
-        // this.logList.unshift({
-        //   timestamp: new Date(),
-        //   command: this.commandForm.commandStr,
-        //   response: data.response,
-        //   status: data.success ? 0 : 1
-        // });
 
         this.$message.success('指令发送成功');
       } catch (error) {
