@@ -37,37 +37,39 @@
     </el-row>
 
     <!-- 任务状态分布图表 -->
-    <el-row :gutter="30">
+    <el-row :gutter="20">
       <el-col :span="16">
-        <el-card class="mb-20">
-          <div ref="chart" style="height: 600px;"></div>
+        <el-card class="mb-20"  style="height: 350px;">
+          <div ref="chart" style="height: 350px;"></div>
         </el-card>
-        <el-card>
+        <el-card  style="height: 350px;">
           <div slot="header" class="client-header">
             <span>训练中任务</span>
           </div>
-          <div v-for="assignment in assignmentsInProgress" :key="assignment.id" class="assignment-card">
-            <el-card shadow="hover"
-                     :style="{
-                       background: `linear-gradient(90deg, rgba(232, 245, 233) ${assignment.progress}%, rgba(255, 255, 255, 1) ${assignment.progress}%)`
-                     }"
-                     @click.native="toAssignment(assignment.id)"
-            >
-              <div class="assignment-content">
-                <div class="assignment-name">{{ assignment.assignmentName }}</div>
-                <div class="project-name">
-                  <el-button type="primary" @click.stop="toProject(assignment.projectId)">
-                    {{ projectMap[assignment.projectId] }}
-                      <el-icon class="el-icon-right" ></el-icon>
-                  </el-button>
+          <div style="height: 280px; overflow: auto;">
+            <div v-for="assignment in assignmentsInProgress" :key="assignment.id" class="assignment-card">
+              <el-card shadow="hover"
+                       :style="{
+                         background: `linear-gradient(90deg, rgba(232, 245, 233) ${assignment.progress}%, rgba(255, 255, 255, 1) ${assignment.progress}%)`
+                       }"
+                       @click.native="toAssignment(assignment.id)"
+              >
+                <div class="assignment-content">
+                  <div class="assignment-name">{{ assignment.assignmentName }}</div>
+                  <div class="project-name">
+                    <el-button type="primary" @click.stop="toProject(assignment.projectId)">
+                      {{ projectMap[assignment.projectId] }}
+                        <el-icon class="el-icon-right" ></el-icon>
+                    </el-button>
+                  </div>
                 </div>
-              </div>
-            </el-card>
+              </el-card>
+            </div>
           </div>
         </el-card>
       </el-col>
-      <el-col :span="8" class="mb-20">
-        <el-card>
+      <el-col :span="8">
+        <el-card style="height: 350px" class="mb-20">
           <div slot="header" class="clearfix">
             <span>个人信息</span>
           </div>
@@ -77,64 +79,78 @@
 <!--            </div>-->
             <ul class="list-group list-group-striped">
               <li class="list-group-item">
-                <svg-icon icon-class="user" />用户名称
+                <svg-icon icon-class="user" />客户名称
                 <div class="pull-right">{{ user.userName }}</div>
               </li>
               <li class="list-group-item">
-                <svg-icon icon-class="phone" />手机号码
+                <svg-icon icon-class="userName" />联系人姓名
+                <div class="pull-right">{{ user.fullName }}</div>
+              </li>
+              <li class="list-group-item">
+                <svg-icon icon-class="location" />客户地址
+                <div class="pull-right">{{ user.address }}</div>
+              </li>
+              <li class="list-group-item">
+                <svg-icon icon-class="phone" />联系人电话
                 <div class="pull-right">{{ user.phonenumber }}</div>
               </li>
               <li class="list-group-item">
-                <svg-icon icon-class="email" />用户邮箱
+                <svg-icon icon-class="email" />联系人邮箱
                 <div class="pull-right">{{ user.email }}</div>
               </li>
-              <li class="list-group-item">
-                <svg-icon icon-class="tree" />所属部门
-                <div class="pull-right" v-if="user.dept">{{ user.dept.deptNames }}</div>
-              </li>
-              <li class="list-group-item">
-                <svg-icon icon-class="tree" />职位
-                <div class="pull-right" v-if="user.dept">{{ postGroup }}</div>
-              </li>
-              <li class="list-group-item">
-                <svg-icon icon-class="peoples" />所属角色
-                <div class="pull-right">{{ roleGroup }}</div>
-              </li>
-              <li class="list-group-item">
-                <svg-icon icon-class="date" />创建日期
-                <div class="pull-right">{{ user.createTime }}</div>
-              </li>
+
+                <li class="list-group-item">
+                  <svg-icon icon-class="tree" />客户所属部门
+                  <div class="pull-right" v-if="user.dept">{{ user.dept.deptNames }}</div>
+                </li>
+<!--              <li class="list-group-item">-->
+<!--                <svg-icon icon-class="tree" />职位-->
+<!--                <div class="pull-right" v-if="user.dept">{{ postGroup }}</div>-->
+<!--              </li>-->
+<!--              <li class="list-group-item">-->
+<!--                <svg-icon icon-class="peoples" />所属角色-->
+<!--                <div class="pull-right">{{ roleGroup }}</div>-->
+<!--              </li>-->
+<!--              <li class="list-group-item">-->
+<!--                <svg-icon icon-class="date" />创建日期-->
+<!--                <div class="pull-right">{{ user.createTime }}</div>-->
+<!--              </li>-->
             </ul>
           </div>
         </el-card>
-  <!--        <el-card>-->
-  <!--          <div slot="header" class="client-header">-->
-  <!--            <span>客户端信息</span>-->
-  <!--          </div>-->
-  <!--          <div v-for="client in clients" :key="client.id">-->
-  <!--            <el-card shadow="hover"-->
-  <!--                     style="margin-bottom: 10px;"-->
-  <!--                     :style="{-->
-  <!--                       backgroundColor:-->
-  <!--                         client.state === 0 ? '#E8F4FF' :-->
-  <!--                         client.state === 1 ? '#e8f5e9' :-->
-  <!--                         '#ffebee'-->
-  <!--                     }"-->
-  <!--            >-->
-  <!--              <div slot="header" class="client-header">-->
-  <!--                <span>{{ client.name }}</span>-->
-  <!--                <el-tag :type="clientStateStyle(client.state).type" effect="dark">-->
-  <!--                  {{ clientStateStyle(client.state).text }}-->
-  <!--                </el-tag>-->
-  <!--              </div>-->
-  <!--              <div class="client-info">-->
-  <!--                <div>IP: {{ client.ip }}</div>-->
-  <!--                <div>端口: {{ client.port }}</div>-->
-  <!--                <div>最后上线: {{ client.createTime }}</div>-->
-  <!--              </div>-->
-  <!--            </el-card>-->
-  <!--          </div>-->
-  <!--        </el-card>-->
+          <el-card v-if="checkRole(['admin'])" style="height: 350px">
+            <div slot="header" class="client-header">
+              <span>客户端信息</span>
+            </div>
+            <div style="height: 280px; overflow: auto">
+              <div v-for="client in clients" :key="client.id">
+                <el-card shadow="hover"
+                         style="margin-bottom: 10px;"
+                         :style="{
+                   backgroundColor:
+                     client.state === 0 ? '#E8F4FF' :
+                     client.state === 1 ? '#e8f5e9' :
+                     '#ffebee'
+                 }"
+                >
+                  <div slot="header" class="client-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>{{ client.name }}</span>
+                    <el-tag :type="clientStateStyle(client.state).type" effect="dark">
+                      {{ clientStateStyle(client.state).text }}
+                    </el-tag>
+                  </div>
+                  <div class="client-info" style="font-size: 14px; line-height: 1;">
+                    <div style="display: flex; justify-content: flex-start;">
+                      <span style="flex-basis: 200px;">IP: {{ client.ip }}</span>
+                      <span style="flex-basis: 100px;">端口: {{ client.port }}</span>
+                    </div>
+                    <div>最后上线: {{ client.createTime }}</div>
+                  </div>
+                </el-card>
+
+              </div>
+            </div>
+          </el-card>
       </el-col>
     </el-row>
   </div>
@@ -149,6 +165,7 @@ import { listAllProject } from '@/api/business/project'
 import { listAllAssignment } from '@/api/business/assignment'
 import { listAllClient } from '@/api/business/client'
 import userAvatar from '@/views/system/user/profile/userAvatar.vue'
+import { checkRole } from '@/utils/permission'
 
 export default {
   components: { userAvatar },
@@ -179,6 +196,7 @@ export default {
   },
 
   methods: {
+    checkRole,
     toAssignment(assignmentId) {
       this.$router.push({
         path: '/assignment',
@@ -294,17 +312,19 @@ export default {
     const [
       { data: projects },
       { data: assignments },
-      // { data: clients }
     ] = await Promise.all([
       listAllProject(),
       listAllAssignment(),
-      // listAllClient(),
     ]);
-
+    let clients = null;
+    if (checkRole(['admin'])) {
+      const response = await listAllClient();
+      clients = response.data;
+    }
+    this.clients = clients;
     this.projects = projects;
     this.assignments = assignments;
 
-    // 创建项目 ID 到项目名称的映射
     this.projectMap = projects.reduce((map, project) => {
       map[project.id] = project.projectName;
       return map;
@@ -318,7 +338,6 @@ export default {
       this.trainingAssignment++
       progress += 10;
     });
-    // this.clients = clients;
 
     this.$nextTick(this.initChart);
   }

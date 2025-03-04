@@ -33,6 +33,7 @@
                   check-strictly
                   @node-click="handleNodeClick"
                   @check-change="handleCheckChange"
+                  style="overflow: auto"
                 >
                   <span
                     class="custom-tree-node"
@@ -73,11 +74,18 @@
                 {{selectedProjectName}}
               </el-tag>
                ->
-              <el-badge :value="'未打标:' + this.resourcesList[0].unMarkedCount" @click="handleClickBadge">
+              <el-badge
+                v-if="resourcesList.length > 0 && resourcesList[0].unMarkedCount != null && resourcesList[0].unMarkedCount !== ''"
+                :value="'未打标:' + resourcesList[0].unMarkedCount"
+                @click="handleClickBadge"
+              >
                 <el-tag>
                   {{selectedAssignmentName}}
                 </el-tag>
               </el-badge>
+              <el-tag v-else>
+                {{selectedAssignmentName}}
+              </el-tag>
             </el-form-item>
             <el-form-item style="margin-left: auto;">
               <div>
@@ -156,7 +164,7 @@
             </el-col>
           </el-row>
           <div class="card-container">
-            <el-row>
+            <el-row v-if="resourcesList.length > 0">
               <el-col
                 :span="5"
                 v-for="(item, index) in resourcesList"
@@ -175,7 +183,7 @@
                   }"
 
                 >
-                  <img :src="getRelativePath(item.path)" class="image"  alt=""/>
+                  <img :src="getRelativePath(item.path)" class="image"  alt="" style="max-height: 310px;"/>
                   <div style="padding: 14px;">
                     <div style="height: 40px">
                       <span >{{ item.name }}</span>
@@ -189,7 +197,12 @@
                 </el-card>
               </el-col>
             </el-row>
+            <el-card v-else style="text-align: center; color: #999; margin-top: 20px;">
+              <span style="display: flex; justify-content: center; height: 500px; align-items: center; font-size: 26px; font-weight: bolder">暂无数据</span>
+            </el-card>
+
           </div>
+
 
           <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
             <el-form ref="form" :model="form" :rules="rules" label-width="80px">
@@ -492,15 +505,16 @@ export default {
       } else {
         tree.setCurrentKey(node.key);
         this.currentNode = node.key
+        console.log(node.key)
         this.selectedAssignmentName = data.label;
         this.selectedProjectName = node.parent.data.label;
       }
+      this.queryParams.pageNum = 1
       this.getList()
     },
     handleCheckChange(data, checked, indeterminate) {
       const tree = this.$refs.tree;
       const node = tree.getNode(data);
-      console.log(node.data.label)
       this.queryParams.pageNum = 1
       if (node.level === 1) {
         tree.setChecked(node.data.id, false, true);
@@ -562,20 +576,22 @@ export default {
           }
         }
       }
-      this.currentNode = checkedId
+      this.currentNode = Number(checkedId)
       for (const parentNode of this.data) {
         if (parentNode.children && parentNode.children.length > 0) {
-          const childNode = parentNode.children.find(child => child.id === checkedId);
+          const childNode = parentNode.children.find(child => child.id === this.currentNode);
+          console.log(childNode)
           if (childNode) {
-            this.selectedAssignmentName = childNode.label;
             this.selectedProjectName = parentNode.label;
+            this.selectedAssignmentName = childNode.label;
             break;
           }
         }
       }
       this.$nextTick(() => {
-        this.currentNode = checkedId
-        this.$refs.tree.setCurrentKey(checkedId);
+        // this.currentNode = checkedId
+        this.$refs.tree.setCurrentKey(this.currentNode);
+        console.log(this.currentNode)
       });
       this.getList();
     },
@@ -764,7 +780,8 @@ export default {
 
 .card-container {
   overflow-y: auto;
-  margin: 10px 0;
+  height: 675px;
+  margin-top: 10px;
 }
 
 .time {
@@ -796,4 +813,6 @@ export default {
 .clearfix:after {
   clear: both;
 }
+
+
 </style>

@@ -55,7 +55,7 @@
                         :stroke-width="6"
                         :show-text="false"
                         :color="usage.color"
-                        style="width: 100px; margin-left: 8px;"
+                        style="width: 80px; margin-left: 8px;"
                       />
                       <span class="usage-value">{{ usage.percentage }}%</span>
                     </span>

@@ -1,12 +1,18 @@
 <template>
-  <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-    <el-form-item label="用户昵称" prop="nickName">
+  <el-form ref="form" :model="form" :rules="rules" label-width="120px">
+    <el-form-item label="客户昵称" prop="nickName">
       <el-input v-model="form.nickName" maxlength="30" />
-    </el-form-item> 
-    <el-form-item label="手机号码" prop="phonenumber">
+    </el-form-item>
+    <el-form-item label="联系人手机号" prop="phonenumber">
       <el-input v-model="form.phonenumber" maxlength="11" />
     </el-form-item>
-    <el-form-item label="邮箱" prop="email">
+    <el-form-item label="联系人姓名" prop="userName">
+      <el-input v-model="form.fullName" placeholder="请输入联系人姓名" maxlength="30" />
+    </el-form-item>
+    <el-form-item label="联系人地址" prop="userName">
+      <el-input v-model="form.address" placeholder="请输入联系人地址" maxlength="60" />
+    </el-form-item>
+    <el-form-item label="客户邮箱" prop="email">
       <el-input v-model="form.email" maxlength="50" />
     </el-form-item>
     <el-form-item label="性别">
@@ -29,6 +35,10 @@ export default {
   props: {
     user: {
       type: Object
+    },
+    getUser: {
+      type: Function,
+      default: null
     }
   },
   data() {
@@ -62,7 +72,7 @@ export default {
     user: {
       handler(user) {
         if (user) {
-          this.form = { nickName: user.nickName, phonenumber: user.phonenumber, email: user.email, sex: user.sex };
+          this.form = { nickName: user.nickName, fullName: user.fullName, address: user.address, phonenumber: user.phonenumber, email: user.email, sex: user.sex };
         }
       },
       immediate: true
@@ -76,6 +86,7 @@ export default {
             this.$modal.msgSuccess("修改成功");
             this.user.phonenumber = this.form.phonenumber;
             this.user.email = this.form.email;
+            this.getUser()
           });
         }
       });

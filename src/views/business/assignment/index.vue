@@ -146,116 +146,118 @@
           </div>
 
           <el-divider></el-divider>
-          <el-descriptions :column="2" border v-loading="loading">
-            <el-descriptions-item label="所属项目" :span="2">
-              {{ getProjectName(assignmentDetail.projectId) || '暂无数据' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="创建时间" :span="2">
-              {{ assignmentDetail.createTime || '暂无数据' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="模型">
-              {{ getModelName(assignmentDetail.modelId) || '暂无数据' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="资源数量">
-              {{ assignmentDetail.resourceCount || '暂无数据' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="训练次数">
-              {{ assignmentDetail.epoch || '暂无数据' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="预训练模式">
-              {{ assignmentDetail.pretrainMode || '暂无数据' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="批大小">
-              {{ assignmentDetail.batchSize || '暂无数据' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="图像大小">
-              {{ assignmentDetail.imgSize || '暂无数据' }}
-            </el-descriptions-item>
-          </el-descriptions>
+          <div style="overflow: auto; height: 780px">
+            <el-descriptions :column="2" border v-loading="loading">
+              <el-descriptions-item label="所属项目" :span="2">
+                {{ getProjectName(assignmentDetail.projectId) || '暂无数据' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="创建时间" :span="2">
+                {{ assignmentDetail.createTime || '暂无数据' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="模型">
+                {{ getModelName(assignmentDetail.modelId) || '暂无数据' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="资源数量">
+                {{ assignmentDetail.resourceCount || '暂无数据' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="训练次数">
+                {{ assignmentDetail.epoch || '暂无数据' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="预训练模式">
+                {{ assignmentDetail.pretrainMode || '暂无数据' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="批大小">
+                {{ assignmentDetail.batchSize || '暂无数据' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="图像大小">
+                {{ assignmentDetail.imgSize || '暂无数据' }}
+              </el-descriptions-item>
+            </el-descriptions>
 
-          <el-collapse v-model="activeName" class="custom-collapse">
-            <el-collapse-item name="1" title="当前训练">
-              <div style="margin-bottom: 20px">
-                <el-button
-                  type="success"
-                  plain
-                  @click.stop="startPrioritizeAssignment"
-                >插队训练</el-button>
-                <el-button
-                  v-if="this.queryParams.state === 0 || this.queryParams.state===3"
-                  type="primary"
-                  plain
-                  @click.stop="startAssignment"
-                >加入训练队列</el-button>
-                <el-button
-                  v-if="this.queryParams.state === 1 || this.queryParams.state === 2"
-                  type="warning"
-                  plain
-                  @click.stop="stopAssignment"
-                >停止训练</el-button>
-                <el-button
-                  type="danger"
-                  plain
-                  @click.stop
-                  @click="handleDelete(assignmentDetail)"
-                  v-hasPermi="['business:assignment:remove']"
-                >删除任务</el-button>
-              </div>
-              <div class="container">
-                <el-progress type="circle" :percentage="progress" style="margin: 10px"></el-progress>
-                <el-card class="box-card">
-                  <div slot="header" class="clearfix" style="font-size: 20px; font-weight: bold">
-                    <span>训练日志</span>
-                    <el-button style="float: right; padding: 3px 0" type="text">清空日志</el-button>
-                  </div>
-                  <div class="card-content"  @scroll="handleScroll">
-                    <div v-for="trainLog in trainLogs" :key="trainLog.index" class="text item">
-                      <span>{{ trainLog.content }}</span>
-                      <span class="create-time">{{ trainLog.createTime }}</span>
+            <el-collapse v-model="activeName" class="custom-collapse">
+              <el-collapse-item name="1" title="当前训练">
+                <div style="margin-bottom: 20px">
+                  <el-button
+                    type="success"
+                    plain
+                    @click.stop="startPrioritizeAssignment"
+                  >插队训练</el-button>
+                  <el-button
+                    v-if="this.queryParams.state === 0 || this.queryParams.state===3"
+                    type="primary"
+                    plain
+                    @click.stop="startAssignment"
+                  >加入训练队列</el-button>
+                  <el-button
+                    v-if="this.queryParams.state === 1 || this.queryParams.state === 2"
+                    type="warning"
+                    plain
+                    @click.stop="stopAssignment"
+                  >停止训练</el-button>
+                  <el-button
+                    type="danger"
+                    plain
+                    @click.stop
+                    @click="handleDelete(assignmentDetail)"
+                    v-hasPermi="['business:assignment:remove']"
+                  >删除任务</el-button>
+                </div>
+                <div class="container">
+                  <el-progress type="circle" :percentage="progress" style="margin: 10px"></el-progress>
+                  <el-card class="box-card">
+                    <div slot="header" class="clearfix" style="font-size: 20px; font-weight: bold">
+                      <span>训练日志</span>
+  <!--                    <el-button style="float: right; padding: 3px 0" type="text">清空日志</el-button>-->
                     </div>
-                  </div>
-                </el-card>
-              </div>
-            </el-collapse-item>
-            <el-collapse-item name="2" title="训练记录">
-              <div style="margin-bottom: 20px">
-                <el-table
-                  ref="trainTable"
-                  v-loading="trainLoading"
-                  :data="trainList"
-                  @selection-change="handleSelectionChange"
-                  @row-click="handleTrainRowClick"
-                  highlight-current-row
-                >
-                <el-table-column label="轮次" align="center" width="80">
-                    <template slot-scope="scope">
-                      {{ trainTotal - (trainQueryParams.pageNum - 1) * trainQueryParams.pageSize - scope.$index }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="状态" width="70px" align="center" prop="state">
-                    <template slot-scope="scope">
-                      <span v-if="scope.row.state === 1">训练中</span>
-                      <span v-else-if="scope.row.state === 2">失败</span>
-                      <span v-else-if="scope.row.state === 0">成功</span>
-                      <span v-else-if="scope.row.state === 3">暂停</span>
-                      <span v-else>未知状态</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="进度" width="60px" align="center" prop="progress" />
-                  <el-table-column label="训练开始时间" align="center" prop="createTime" />
-                  <el-table-column label="训练结束时间" align="center" prop="updateTime" />
-                </el-table>
-                <pagination
-                  v-show="trainTotal>0"
-                  :total="trainTotal"
-                  :page.sync="trainQueryParams.pageNum"
-                  :limit.sync="trainQueryParams.pageSize"
-                  :page-sizes="[5,10,15,20]"
-                  @pagination="getTrainList(null)"
-                />
-              </div>
-            </el-collapse-item>
-          </el-collapse>
+                    <div class="card-content"  @scroll="handleScroll">
+                      <div v-for="trainLog in trainLogs" :key="trainLog.index" class="text item">
+                        <span>{{ trainLog.content }}</span>
+                        <span class="create-time">{{ trainLog.createTime }}</span>
+                      </div>
+                    </div>
+                  </el-card>
+                </div>
+              </el-collapse-item>
+              <el-collapse-item name="2" title="训练记录">
+                <div style="margin-bottom: 20px">
+                  <el-table
+                    ref="trainTable"
+                    v-loading="trainLoading"
+                    :data="trainList"
+                    @selection-change="handleSelectionChange"
+                    @row-click="handleTrainRowClick"
+                    highlight-current-row
+                  >
+                  <el-table-column label="轮次" align="center" width="80">
+                      <template slot-scope="scope">
+                        {{ trainTotal - (trainQueryParams.pageNum - 1) * trainQueryParams.pageSize - scope.$index }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="状态" width="70px" align="center" prop="state">
+                      <template slot-scope="scope">
+                        <span v-if="scope.row.state === 1">训练中</span>
+                        <span v-else-if="scope.row.state === 2">失败</span>
+                        <span v-else-if="scope.row.state === 0">成功</span>
+                        <span v-else-if="scope.row.state === 3">暂停</span>
+                        <span v-else>未知状态</span>
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="进度" width="60px" align="center" prop="progress" />
+                    <el-table-column label="训练开始时间" align="center" prop="createTime" />
+                    <el-table-column label="训练结束时间" align="center" prop="updateTime" />
+                  </el-table>
+                  <pagination
+                    v-show="trainTotal>0"
+                    :total="trainTotal"
+                    :page.sync="trainQueryParams.pageNum"
+                    :limit.sync="trainQueryParams.pageSize"
+                    :page-sizes="[5,10,15,20]"
+                    @pagination="getTrainList(null)"
+                  />
+                </div>
+              </el-collapse-item>
+            </el-collapse>
+          </div>
         </pane>
       </splitpanes>
     </el-row>
@@ -694,7 +696,7 @@ export default {
 }
 
 .card-content {
-  height: 200px;
+  height: 150px;
   overflow-y: auto;
 }
 .text.item {
