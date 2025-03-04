@@ -162,7 +162,7 @@
 import { getUserProfile } from "@/api/system/user";
 import * as echarts from 'echarts';
 import { listAllProject } from '@/api/business/project'
-import { listAllAssignment } from '@/api/business/assignment'
+import { listAllAssignment, listTraining } from '@/api/business/assignment'
 import { listAllClient } from '@/api/business/client'
 import userAvatar from '@/views/system/user/profile/userAvatar.vue'
 import { checkRole } from '@/utils/permission'
@@ -314,7 +314,7 @@ export default {
       { data: assignments },
     ] = await Promise.all([
       listAllProject(),
-      listAllAssignment(),
+      listTraining(),
     ]);
     let clients = null;
     if (checkRole(['admin'])) {
@@ -330,14 +330,7 @@ export default {
       return map;
     }, {});
 
-    let progress = 20;
     this.trainingAssignment = 0
-    this.assignments.forEach(assignment => {
-      if (assignment.state !== 1) return;
-      assignment.progress = progress;
-      this.trainingAssignment++
-      progress += 10;
-    });
 
     this.$nextTick(this.initChart);
   }

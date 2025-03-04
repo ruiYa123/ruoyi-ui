@@ -16,6 +16,14 @@ export function listAllAssignment(query) {
     params: query
   })
 }
+export function listTraining(query) {
+  return request({
+    url: '/business/assignment/listTraining',
+    method: 'get',
+    params: query
+  })
+}
+
 
 export function getStateCounts() {
   return request({

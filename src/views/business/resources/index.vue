@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-row :gutter="20">
       <splitpanes :horizontal="this.$store.getters.device === 'mobile'" class="default-theme">
-        <pane size="16">
+        <pane size="20">
           <el-col>
             <div>
               <div style="margin: 5px">
@@ -66,7 +66,7 @@
             </div>
           </el-col>
         </pane>
-        <pane size="84">
+        <pane size="80">
           <!-- 表单和按钮部分 -->
           <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="true" style="display: flex; justify-content: space-between; align-items: center;">
             <el-form-item style="margin-top: 20px">
@@ -175,7 +175,7 @@
                 <el-card
                   :body-style="{ padding: '0px' }"
                   v-on:click.native="toggleSelectCard(item)"
-                  :class="{ selected: selectedIndex.includes(item) }"
+                  :class="{ selectedCard: selectedIndex.includes(item) }"
                   :style="{
                     backgroundColor: item.jsonPath === null
                       ? (selectedIndex.includes(item) ? '#c0b2f5' : '#f59393')
@@ -183,7 +183,7 @@
                   }"
 
                 >
-                  <img :src="getRelativePath(item.path)" class="image"  alt="" style="max-height: 310px;"/>
+                  <img :src="getRelativePath(item.path)" class="image"  alt="" style="height: 300px;"/>
                   <div style="padding: 14px;">
                     <div style="height: 40px">
                       <span >{{ item.name }}</span>
@@ -773,7 +773,7 @@ export default {
   padding: 10px;
 }
 
-.selected {
+.selectedCard {
   border: 1px solid #409eff;
   box-shadow: 0 0 50px rgba(64, 158, 255, 0.5);
 }

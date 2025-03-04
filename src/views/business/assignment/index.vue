@@ -713,6 +713,7 @@ export default {
   text-align: right; /* 右对齐文本 */
   flex-shrink: 0; /* 防止时间被压缩 */
   margin-left: 10px; /* 与内容之间的间距 */
+  margin-right: 10px;
 }
 
 
@@ -727,7 +728,7 @@ export default {
 }
 
 .box-card {
-  flex: 0 0 80%;
+  flex: 0 0 85%;
   margin-left: 20px;
 }
 
