@@ -178,6 +178,7 @@
               <el-collapse-item name="1" title="当前训练">
                 <div style="margin-bottom: 20px">
                   <el-button
+                    v-if="this.queryParams.state === 0 || this.queryParams.state=== 2 || this.queryParams.state===3"
                     type="success"
                     plain
                     @click.stop="startPrioritizeAssignment"

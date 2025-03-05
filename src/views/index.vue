@@ -330,7 +330,10 @@ export default {
       return map;
     }, {});
 
-    this.trainingAssignment = 0
+    this.assignments.forEach(assignment => {
+      if (assignment.state !== 1) return;
+      this.trainingAssignment++
+    });
 
     this.$nextTick(this.initChart);
   }

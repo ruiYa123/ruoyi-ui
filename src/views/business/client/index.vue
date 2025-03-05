@@ -855,7 +855,7 @@ export default {
 }
 
 .no-task-panel {
-  padding: 40px 0;
+  padding: 11px 0;
   text-align: center;
   background: #f8f9fa;
 }
