@@ -63,7 +63,10 @@ export default {
     open: Boolean,
     title: String,
     form: Object,
-    isProject: false,
+    isProject: {
+      type: Boolean,
+      default: false // 提供默认值
+    },
     onSubmit: {
       type: Function,
       default: () => {
@@ -72,7 +75,6 @@ export default {
   },
   data() {
     return {
-      isProject: false,
       projectOptions: [],
       modelOptions: [],
       rules: {

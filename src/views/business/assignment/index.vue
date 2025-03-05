@@ -329,10 +329,10 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
-      completedCount: {},
-      queuedCount: {},
-      unstartedCount: {},
-      trainingCount: {},
+      completedCount: null,
+      queuedCount: null,
+      unstartedCount: null,
+      trainingCount: null,
       // 查询参数
       queryParams: {
         pageNum: 1,

@@ -79,7 +79,7 @@
 <!--            </div>-->
             <ul class="list-group list-group-striped">
               <li class="list-group-item">
-                <svg-icon icon-class="user" />客户名称
+                <svg-icon icon-class="user" />客户账号
                 <div class="pull-right">{{ user.userName }}</div>
               </li>
               <li class="list-group-item">

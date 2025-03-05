@@ -204,12 +204,16 @@
           </div>
 
 
-          <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-            <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+          <el-dialog :title="title" :visible.sync="open" width="400px" @close="handleDialogClose" append-to-body>
+            <el-form ref="form" :model="form" :rules="rules">
+              <input
+                type="file"
+                ref="directoryInput"
+                webkitdirectory
+                @change="handleDirectoryUpload"
+                style="display: none;"
+              />
               <el-form-item>
-                <el-button type="primary" @click="submitForm" style="float: right;">确认上传</el-button>
-              </el-form-item>
-              <el-form-item label="上传图片" prop="image">
                 <el-upload
                   class="upload-demo"
                   drag
@@ -218,16 +222,29 @@
                   :on-preview="handlePreview"
                   :on-remove="handleRemove"
                   :file-list="fileList"
-                  list-type="picture"
                   :auto-upload="false"
                   multiple
+                  accept=".bmp,.json"
                   :on-change="handleChange"
-                >
+                  :before-upload="handleBeforeUpload"
+                  >
                   <i class="el-icon-upload"></i>
-                  <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+                  <div class="el-upload__text">
+                    将文件拖到此处，或<em>点击上传</em>
+                  </div>
+                  <el-button type="primary" @click.stop="triggerDirectoryUpload" style="margin-top: 5px;">
+                    上传文件夹
+                  </el-button>
                 </el-upload>
+
               </el-form-item>
             </el-form>
+            <div slot="footer" class="dialog-footer">
+              <el-badge :value="fileList.length" style="margin-right: 10px">
+                <el-button type="primary" @click="submitForm">确认上传</el-button>
+              </el-badge>
+              <el-button @click="handleDialogClose">取 消</el-button>
+            </div>
           </el-dialog>
         </pane>
       </splitpanes>
@@ -259,6 +276,8 @@ import {
 import { listProject } from '@/api/business/project'
 import { listAllAssignment} from '@/api/business/assignment'
 import AddAssignmentDialog from '@/views/business/assignment/addAssignmentDialog.vue'
+import config from '@/config';
+import { Notification } from 'element-ui';
 
 export default {
   components: { AddAssignmentDialog, Treeselect, Splitpanes, Pane },
@@ -326,11 +345,14 @@ export default {
     });
   },
   mounted() {
-    this.$nextTick(() => {
-      this.$refs.uploadFile.$children[0].$refs.input.webkitdirectory = true
-    })
+    // this.$nextTick(() => {
+    //   this.$refs.upload.$children[0].$refs.input.webkitdirectory = true
+    // })
   },
   methods: {
+    triggerDirectoryUpload() {
+      this.$refs.directoryInput.click();
+    },
     toAssignment(assignment) {
       console.log(assignment)
       this.$router.push({
@@ -356,11 +378,23 @@ export default {
     },
     handleDirectoryUpload(event) {
       const files = event.target.files;
-      this.fileList = Array.from(files).map(file => ({
+      const validExtensions = ['bmp', 'json'];
+
+      const existingFileNames = new Set(this.fileList.map(file => file.name));
+
+      const newFiles = Array.from(files).filter(file => {
+        const extension = file.name.split('.').pop().toLowerCase();
+        return validExtensions.includes(extension) && !existingFileNames.has(file.name);
+      }).map(file => ({
         name: file.name,
         url: URL.createObjectURL(file),
         raw: file
       }));
+      if (newFiles.length === 0) {
+        this.$message.warning('文件夹中没有新的 BMP 或 JSON 文件。');
+      } else {
+        this.fileList = this.fileList.concat(newFiles);
+      }
     },
     addAssignment(node) {
       this.assignmentForm.projectId = node.data.id;
@@ -369,23 +403,29 @@ export default {
       this.isAddAssignmentDialogOpen = true;
     },
 
+    handleDialogClose() {
+      this.$refs.directoryInput.value = '';
+      this.fileList = [];
+      this.open = false;
+    },
+
     getFileNameFromPath(filePath) {
       // 使用 / 或 \ 作为分隔符
       const parts = filePath.split(/[/\\]/);
-      return parts[parts.length - 1]; // 返回最后一个部分
+      return parts[parts.length - 1];
    },
-
     getRelativePath(fullPath) {
-      const publicPath = 'public\\';
-      const index = fullPath.indexOf(publicPath);
-      if (index !== -1) {
-        return fullPath.substring(index + publicPath.length);
-      }
-
-      return '';
+      return `http://${config.fileServer.ip}:${config.fileServer.port}/${fullPath}`;
     },
     async downloadFolder(node) {
+      let notifyInstance;
       try {
+        notifyInstance = Notification({
+          message: node.data.label + '  资源打包中...',
+          type: 'info',
+          duration: 0, // 持续显示，直到手动关闭
+          iconClass: 'el-icon-loading'
+        });
         const zip = new JSZip();
         const projectName = node.parent.data.label;
         const assignmentName = node.data.label;
@@ -401,24 +441,29 @@ export default {
 
         for (const filePath of files) {
           const relativePath = this.getRelativePath(filePath).replace(/\\/g, '/');
-          const response = await fetch(`/${relativePath}`);
-          if (!response.ok) throw new Error(`无法下载文件: ${relativePath}`);
-          const blob = await response.blob();
-          const fileName = relativePath.split('/').slice(2).join('/'); // 去除项目名和任务名前的路径
+          const fetchResponse = await fetch(relativePath);
+          if (!fetchResponse.ok) throw new Error(`无法下载文件: ${relativePath}`);
+          const blob = await fetchResponse.blob();
+          console.log(relativePath)
+          const fileName = relativePath.split('/').slice(-3).join('/'); // 去除项目名和任务名前的路径
           zip.file(fileName, blob);
         }
 
         // 生成并下载ZIP
         const content = await zip.generateAsync({ type: 'blob' });
         saveAs(content, zipName);
-        this.$message.success('开始下载压缩包');
+        this.updateNotification(notifyInstance, node.data.label + '  资源打包成功，开始下载', 'success')
 
       } catch (error) {
         console.error('下载失败:', error);
         this.$message.error('压缩包下载失败');
+        this.updateNotification(notifyInstance, node.data.label + '  压缩包下载失败', 'error')
       }
     },
     handleDownloadAll() {
+      if (this.selectedIndex.length === 0 ) {
+        this.$modal.msgWarning("请选择需要下载的资源");
+      }
       this.selectedIndex.forEach((item, index) => {
         setTimeout(() => {
           this.downloadFile(item.path);
@@ -434,17 +479,33 @@ export default {
         this.downloadFile(row.jsonPath);
       }
     },
-
     downloadFile(filePath) {
-      const relativePath = this.getRelativePath(filePath); // 获取相对路径
-      const fileUrl = `${window.location.origin}/${relativePath}`; // 拼接完整 URL
+      const fileUrl = this.getRelativePath(filePath); // 获取完整的文件URL
 
-      // 创建下载链接
-      const link = document.createElement('a');
-      link.href = fileUrl;
-      link.download = this.getFileNameFromPath(filePath);
-      link.click();
+      // 使用 fetch 获取文件并强制下载
+      fetch(fileUrl)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('网络响应失败');
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = this.getFileNameFromPath(filePath); // 设置下载文件名
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url); // 释放内存
+        })
+        .catch(error => {
+          console.error('下载失败:', error);
+          this.$message.error('文件下载失败');
+        });
     },
+
 
     handleAddAssignmentSubmit() {
       this.getResourcesTree().then(() => {
@@ -453,8 +514,14 @@ export default {
     },
 
     handleChange(file, fileList) {
-
-      this.fileList = fileList
+      const existingFileNames = new Set(this.fileList.map(file => file.name));
+      const newFiles = fileList.filter(file => !existingFileNames.has(file.name));
+      console.log(newFiles)
+      if (newFiles.length === 0) {
+        this.$message.warning(`存在同名或相同文件`);
+      } else {
+        this.fileList = this.fileList.concat(newFiles);
+      }
     },
     handleRemove(file, fileList) {
       this.fileList = fileList
@@ -462,14 +529,13 @@ export default {
     handlePreview() {
     },
     handleBeforeUpload(file) {
-      const isImage = file.type.startsWith('image/');
-      if (!isImage) {
-        this.$message.error('只能上传图片文件！');
+      const isBmp = file.type === 'image/bmp';
+      const isJson = file.type === 'application/json';
+      if (!isBmp && !isJson) {
+        this.$message.error('只能上传 BMP 或 JSON 文件!');
         return false;
       }
-      file.url = URL.createObjectURL(file);
-      this.fileList.push(file);
-      return false; // 阻止自动上传
+      return true;
     },
 
     changeState(state) {
@@ -644,32 +710,57 @@ export default {
         this.title = "修改资源";
       });
     },
+    updateNotification(notifyInstance, message, type) {
+      if (notifyInstance) {
+        notifyInstance.close();
+      }
+      Notification({
+        message: message,
+        type: type,
+        duration: 3000
+      });
+    },
     submitForm() {
+      if (this.fileList.length === 0) {
+        this.$modal.msgWarning("请添加资源");
+        return
+      }
       this.$refs["form"].validate(valid => {
         const formData = new FormData();
         if (valid) {
+          const notifyInstance = Notification({
+            message: this.selectedAssignmentName + '  资源文件正在上传中...',
+            type: 'info',
+            duration: 0, // 持续显示，直到手动关闭
+            iconClass: 'el-icon-loading'
+          });
           Object.entries(this.form).forEach(([key, value]) => {
             if (value !== null) {
               formData.append(key, value);
             }
           });
+
           this.fileList.forEach(file => {
-            formData.append('files[]', file.raw);
+            formData.append('files[]', file.raw, file.raw.name);
           });
           formData.append('assignmentName', this.selectedAssignmentName);
           formData.append('projectName', this.selectedProjectName);
           if (this.form.id != null) {
             updateResources(formData).then(response => {
-              this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
-            });
+              this.fileList = [];
+              this.updateNotification(notifyInstance, this.selectedAssignmentName + '  资源文件上传成功', 'success');
+            }).catch(() =>
+              this.updateNotification(notifyInstance, this.selectedAssignmentName + '  资源文件上传失败', 'error'));
           } else {
             addResources(formData).then(response => {
-              this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
-            });
+              this.fileList = [];
+              this.updateNotification(notifyInstance, this.selectedAssignmentName + '  资源文件上传成功', 'success');
+            }).catch(() =>
+              this.updateNotification(notifyInstance, this.selectedAssignmentName + '  资源文件上传失败', 'error'))
           }
         }
       });
@@ -684,20 +775,13 @@ export default {
         const confirm = await this.$modal.confirm(`是否确认删除 ${assignmentName} 的所有资源？`);
 
         if (confirm) {
-          const path = [];
-          console.log('确认');
+          const paths = response.data.reduce((acc, item) => {
+            acc.push(item.path);
+            if (item.jsonPath) acc.push(item.jsonPath);
+            return acc;
+          }, []);
 
-          // 使用 for...of 循环来处理响应数据
-          for (const item of response.data) {
-            console.log(item);
-            path.push(item.path);
-            if (item.jsonPath) path.push(item.jsonPath); // 改为使用 path
-          }
-
-          console.log('准备发送');
-          await delResources({ path: path });
-
-          // 删除成功后更新列表
+          await delResources({ path: paths });
           this.getList();
           this.$modal.msgSuccess("删除成功");
         }
@@ -708,6 +792,10 @@ export default {
     },
 
     handleDeleteBatch() {
+      if (this.selectedIndex.length === 0 ) {
+        this.$modal.msgWarning("请选择需要删除的资源");
+        return
+      }
       this.$modal.confirm('是否确认删除这些资源？').then(() => {
         const path = [];
         this.selectedIndex.forEach(index => {
@@ -815,4 +903,14 @@ export default {
 }
 
 
+
+.upload-demo {
+  ::v-deep .el-upload-dragger {
+    height: 200px !important;
+  }
+  ::v-deep.el-upload-list {
+    max-height: 150px; /* 设置文件列表的最大高度 */
+    overflow-y: auto; /* 启用垂直滚动条 */
+  }
+}
 </style>

@@ -17,8 +17,8 @@
         <pane size="84">
           <el-col>
             <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-              <el-form-item label="客户名称" prop="userName">
-                <el-input v-model="queryParams.userName" placeholder="请输入客户名称" clearable style="width: 240px" @keyup.enter.native="handleQuery" />
+              <el-form-item label="客户账号" prop="userName">
+                <el-input v-model="queryParams.userName" placeholder="请输入客户账号" clearable style="width: 240px" @keyup.enter.native="handleQuery" />
               </el-form-item>
               <el-form-item label="联系人手机号" prop="phonenumber">
                 <el-input v-model="queryParams.phonenumber" placeholder="请输入联系人手机号" clearable style="width: 240px" @keyup.enter.native="handleQuery" />
@@ -59,7 +59,7 @@
             <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
               <el-table-column type="selection" width="50" align="center" />
               <el-table-column label="客户编号" align="center" key="userId" prop="userId" v-if="columns[0].visible" />
-              <el-table-column label="客户名称" align="center" key="userName" prop="userName" v-if="columns[1].visible" :show-overflow-tooltip="true" />
+              <el-table-column label="客户账号" align="center" key="userName" prop="userName" v-if="columns[1].visible" :show-overflow-tooltip="true" />
               <el-table-column label="联系人姓名" align="center" key="fullName" prop="fullName" v-if="columns[1].visible" :show-overflow-tooltip="true" />
               <el-table-column label="联系人地址" align="center" key="address" prop="address" v-if="columns[1].visible" :show-overflow-tooltip="true" />
               <el-table-column label="客户昵称" align="center" key="nickName" prop="nickName" v-if="columns[2].visible" :show-overflow-tooltip="true" />
@@ -125,8 +125,8 @@
         </el-row>
         <el-row>
           <el-col :span="12">
-            <el-form-item v-if="form.userId == undefined" label="客户名称" prop="userName">
-              <el-input v-model="form.userName" placeholder="请输入客户名称" maxlength="30" />
+            <el-form-item v-if="form.userId == undefined" label="客户账号" prop="userName">
+              <el-input v-model="form.userName" placeholder="请输入客户账号" maxlength="30" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -293,7 +293,7 @@ export default {
       // 列信息
       columns: [
         { key: 0, label: `客户编号`, visible: true },
-        { key: 1, label: `客户名称`, visible: true },
+        { key: 1, label: `客户账号`, visible: true },
         { key: 2, label: `客户昵称`, visible: true },
         { key: 3, label: `部门`, visible: true },
         { key: 4, label: `联系人手机号`, visible: true },
@@ -303,8 +303,8 @@ export default {
       // 表单校验
       rules: {
         userName: [
-          { required: true, message: "客户名称不能为空", trigger: "blur" },
-          { min: 2, max: 20, message: '客户名称长度必须介于 2 和 20 之间', trigger: 'blur' }
+          { required: true, message: "客户账号不能为空", trigger: "blur" },
+          { min: 2, max: 20, message: '客户账号长度必须介于 2 和 20 之间', trigger: 'blur' }
         ],
         nickName: [
           { required: true, message: "客户昵称不能为空", trigger: "blur" }

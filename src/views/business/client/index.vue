@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-row :gutter="20">
       <!-- 左侧客户端列表 -->
-      <el-col :span="6">
+      <el-col :span=6>
         <div class="client-list">
           <span v-if="clientList.length === 0">未有识别的客户端</span>
           <el-card
@@ -38,7 +38,7 @@
       </el-col>
 
       <!-- 右侧操作区域 -->
-      <el-col :span="18">
+      <el-col :span=18>
         <el-card class="operation-panel">
           <!-- 折叠区域 -->
           <el-collapse v-model="activeNames" accordion>
@@ -55,7 +55,7 @@
                         :stroke-width="6"
                         :show-text="false"
                         :color="usage.color"
-                        style="width: 80px; margin-left: 8px;"
+                        style="width: 60px; margin-left: 8px;"
                       />
                       <span class="usage-value">{{ usage.percentage }}%</span>
                     </span>
@@ -65,10 +65,10 @@
               <!-- 分块展示 -->
               <div style="height: 1000px">
                 <el-row :gutter="20" style="margin-bottom: 20px;">
-                  <el-col :span="24">
+                  <el-col :span=24>
                     <el-card>
                       <el-row :gutter="20">
-                        <el-col :span="16">
+                        <el-col :span=16>
                           <el-descriptions title="系统信息" :column="2" border>
                             <el-descriptions-item label="操作系统">{{ systemInfo.OS }} - {{ systemInfo.OS_Version }}</el-descriptions-item>
                             <el-descriptions-item label="机器名称">{{ systemInfo.Machine_Name }}</el-descriptions-item>
@@ -76,7 +76,7 @@
                             <el-descriptions-item label="网络状态">{{ systemInfo.Network_Status }}</el-descriptions-item>
                           </el-descriptions>
                         </el-col>
-                        <el-col :span="8">
+                        <el-col :span=8>
                           <PieChart  v-if="activeNames === '1'" :title="'Disk 使用情况'" :data="diskData" :unit="'MB'"/>
                         </el-col>
                       </el-row>
@@ -85,20 +85,20 @@
                 </el-row>
 
                 <el-row :gutter="20" style="margin-bottom: 20px;">
-                  <el-col :span="24">
+                  <el-col :span=24>
                     <el-card>
                       <el-row :gutter="20">
-                        <el-col :span="8">
+                        <el-col :span=8>
                           <el-descriptions title="CPU 信息" :column="1" border>
                             <el-descriptions-item label="CPU型号">{{ systemInfo.CPU_Model }}</el-descriptions-item>
                             <el-descriptions-item label="CPU核心数">{{ systemInfo.CPU_core }}</el-descriptions-item>
                             <el-descriptions-item label="CPU线程数">{{ systemInfo.CPU_threads }}</el-descriptions-item>
                           </el-descriptions>
                         </el-col>
-                        <el-col span="8">
+                        <el-col :span=8>
                           <PieChart  v-if="activeNames === '1'" :title="'CPU 使用情况'" :data="cpuData" :unit="'%'"/>
                         </el-col>
-                        <el-col span="8">
+                        <el-col :span=8>
                           <PieChart  v-if="activeNames === '1'" :title="'CPU 内存使用情况'" :data="cpuMemData" :unit="'MB'"/>
                         </el-col>
                       </el-row>
@@ -107,19 +107,19 @@
                 </el-row>
 
                 <el-row :gutter="20">
-                  <el-col :span="24">
+                  <el-col :span=24>
                     <el-card>
                       <el-row :gutter="20">
-                        <el-col :span="8">
+                        <el-col :span=8>
                           <el-descriptions title="GPU 信息" :column="1" border>
                             <el-descriptions-item label="GPU型号">{{ systemInfo.GPU_Model }}</el-descriptions-item>
                             <el-descriptions-item label="GPU核心数">{{ systemInfo.GPU_core }}</el-descriptions-item>
                           </el-descriptions>
                         </el-col>
-                        <el-col :span="8">
+                        <el-col :span=8>
                           <PieChart  v-if="activeNames === '1'" :title="'GPU 使用情况'" :data="gpuData" :unit="'%'"/>
                         </el-col>
-                        <el-col :span="8">
+                        <el-col :span=8>
                           <PieChart  v-if="activeNames === '1'" :title="'GPU 内存使用情况'" :data="gpuMemData" :unit="'MB'"/>
                         </el-col>
                       </el-row>
@@ -152,7 +152,7 @@
               <div v-if="assignmentInfo.assignmentName" class="task-content">
                 <el-row :gutter="20">
                   <!-- 左侧圆形进度条 -->
-                  <el-col :span="6" class="progress-container">
+                  <el-col :span=6 class="progress-container">
                     <el-progress
                       :percentage="assignmentInfo.trainPercentage"
                       type="circle"
@@ -164,9 +164,9 @@
                   </el-col>
 
                   <!-- 右侧参数信息 -->
-                  <el-col :span="18" class="params-container">
+                  <el-col :span=18 class="params-container">
                     <el-descriptions :column="2" border>
-                      <el-descriptions-item label="任务名称" :span="2">
+                      <el-descriptions-item label="任务名称" :span=2>
                         <el-tag effect="dark" type="info">{{ assignmentInfo.assignmentName }}</el-tag>
                       </el-descriptions-item>
                       <el-descriptions-item label="预训练模型">
@@ -184,7 +184,7 @@
                       <el-descriptions-item label="开始时间">
                         {{ assignmentInfo.startTime || '2024-03-20 14:30' }}
                       </el-descriptions-item>
-                      <el-descriptions-item label="任务描述" :span="2">
+                      <el-descriptions-item label="任务描述" :span=2>
                         <div class="description-text">
                           {{ assignmentInfo.description || '暂无任务描述' }}
                         </div>
@@ -450,6 +450,7 @@ export default {
         tempData = [{ value: 0, name: '已使用' },]
       } else {
         tempData = data
+        console.log(data)
       }
       const used = tempData.find(item => item.name === '已使用').value;
       const total = tempData.reduce((sum, item) => sum + item.value, 0);
@@ -747,13 +748,13 @@ export default {
 
   .usage-label {
     font-weight: bold;
-    margin-right: 4px;
-    margin-left: 4px;
+    margin-right: 2px;
+    margin-left: 2px;
   }
 
   .usage-value {
-    margin-left: 4px;
-    font-size: 12px;
+    margin-left: 3px;
+    font-size: 10px;
     color: #666;
   }
 
