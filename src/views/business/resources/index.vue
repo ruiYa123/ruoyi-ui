@@ -260,24 +260,24 @@
 </template>
 
 <script>
-import { Splitpanes, Pane } from "splitpanes"
-import "splitpanes/dist/splitpanes.css"
-import Treeselect from '@riophae/vue-treeselect';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
+import { Pane, Splitpanes } from 'splitpanes'
+import 'splitpanes/dist/splitpanes.css'
+import Treeselect from '@riophae/vue-treeselect'
+import JSZip from 'jszip'
+import { saveAs } from 'file-saver'
 import {
-  listResources,
-  getResources,
-  delResources,
   addResources,
-  updateResources,
-  listImages, listAll
+  delResources,
+  getResources,
+  listAll,
+  listImages,
+  updateResources
 } from '@/api/business/resources'
 import { listProject } from '@/api/business/project'
-import { listAllAssignment} from '@/api/business/assignment'
+import { listAllAssignment } from '@/api/business/assignment'
 import AddAssignmentDialog from '@/views/business/assignment/addAssignmentDialog.vue'
-import config from '@/config';
-import { Notification } from 'element-ui';
+import config from '@/config'
+import { Notification } from 'element-ui'
 
 export default {
   components: { AddAssignmentDialog, Treeselect, Splitpanes, Pane },
@@ -321,7 +321,7 @@ export default {
       title: "",
       open: false,
       data: [],
-      isPorject: [],
+      isPorject: true,
       defaultProps: {
         children: "children",
         label: "label",
@@ -338,8 +338,13 @@ export default {
     };
   },
   created() {
-    const id = this.$route.query.id;
+
     const projectId = this.$route.query.projectId;
+    let id = null
+    if (this.$route.query.projectId && this.$route.query.id) {
+      id = projectId + '-' +this.$route.query.id;
+
+    }
     this.getResourcesTree().then(() => {
       this.setDefaultSelectedNode(id, projectId);
     });
@@ -354,11 +359,14 @@ export default {
       this.$refs.directoryInput.click();
     },
     toAssignment(assignment) {
-      console.log(assignment)
-      this.$router.push({
+      const dashIndex = assignment.data.id.indexOf('-');
+      let id = null;
+      if (dashIndex !== -1) {
+        id = assignment.data.id.slice(dashIndex + 1)
+      }      this.$router.push({
         path: '/assignment',
         query: {
-          id: assignment.data.id,
+          id: id,
           state: assignment.data.state
         }
       });
@@ -570,6 +578,7 @@ export default {
         tree.setCurrentKey(this.currentNode);
       } else {
         tree.setCurrentKey(node.key);
+        console.log(node)
         this.currentNode = node.key
         console.log(node.key)
         this.selectedAssignmentName = data.label;
@@ -616,7 +625,7 @@ export default {
       }
       const assignmentResponse = await listAllAssignment(queryParams);
       assignmentResponse.data.forEach(item => {
-        const assignment = { id: item.id, label: item.assignmentName, state: item.state };
+        const assignment = { id: item.projectId + '-' + item.id, label: item.assignmentName, state: item.state };
         const project = projectMap.get(item.projectId);
         if (project) {
           project.children.push(assignment);
@@ -636,13 +645,15 @@ export default {
         }
       } else {
         for (const project of this.data) {
+          console.log(project)
           if (project.children && project.children.length > 0) {
             checkedId = project.children[0].id;
+            console.log(checkedId)
             break;
           }
         }
       }
-      this.currentNode = Number(checkedId)
+      this.currentNode = checkedId
       for (const parentNode of this.data) {
         if (parentNode.children && parentNode.children.length > 0) {
           const childNode = parentNode.children.find(child => child.id === this.currentNode);
@@ -698,8 +709,13 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
-      this.form.assignmentId = this.currentNode
-      this.title = "添加资源";
+      if (this.currentNode != null) {
+        const dashIndex = this.currentNode.indexOf('-');
+        if (dashIndex !== -1) {
+          this.form.assignmentId = this.currentNode.slice(dashIndex + 1)
+        }
+        this.title = "添加资源";
+      }
     },
     handleUpdate(row) {
       this.reset();
@@ -746,6 +762,15 @@ export default {
           formData.append('assignmentName', this.selectedAssignmentName);
           formData.append('projectName', this.selectedProjectName);
           if (this.form.id != null) {
+            const dashIndex = this.form.id.indexOf('-');
+
+            // 如果找到 "-", 提取其后的子字符串
+            if (dashIndex !== -1) {
+              const numberStr = this.form.id.slice(dashIndex + 1);
+
+              // 尝试将提取的子字符串转换为数字
+              this.form.id = Number(numberStr)
+            }
             updateResources(formData).then(response => {
               this.open = false;
               this.getList();
@@ -766,15 +791,14 @@ export default {
       });
     },
     async removeDirectory(node) {
+      const projectName = node.parent.data.label;
+      const assignmentName = node.data.label;
+
+      const confirm = await this.$modal.confirm(`是否确认删除 ${assignmentName} 的所有资源？`);
+
       try {
-        const projectName = node.parent.data.label;
-        const assignmentName = node.data.label;
+
         const response = await listAll({ projectName: projectName, assignmentName: assignmentName });
-
-        // 确认删除操作
-        const confirm = await this.$modal.confirm(`是否确认删除 ${assignmentName} 的所有资源？`);
-
-        if (confirm) {
           const paths = response.data.reduce((acc, item) => {
             acc.push(item.path);
             if (item.jsonPath) acc.push(item.jsonPath);
@@ -784,7 +808,6 @@ export default {
           await delResources({ path: paths });
           this.getList();
           this.$modal.msgSuccess("删除成功");
-        }
       } catch (error) {
         this.$modal.msgError("删除失败");
       }
@@ -803,11 +826,11 @@ export default {
             path.push(index.jsonPath)
           }
         })
-        return delResources({ path: path });
-      }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => {});
+        return delResources({ path: path }).then(() => {
+          this.getList();
+          this.$modal.msgSuccess("删除成功");
+        });
+      })
     },
     handleDelete(row) {
       this.$modal.confirm('是否确认删除资源："' + row.name + '"的数据项？').then(() => {

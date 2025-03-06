@@ -613,6 +613,7 @@ export default {
         path: '/resources',
         query: {
           id: assignmentDetail.id,
+          projectId: assignmentDetail.projectId
         }
       });
     },
