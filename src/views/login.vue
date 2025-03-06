@@ -63,7 +63,9 @@
       </el-form>
       <!--  底部  -->
       <div class="el-login-footer">
-        <span>Copyright www.miaoxiangkeji.com 北京市妙想科技有限公司 (C)2006-2016 ALL RIGHTS RESERVED 京ICP备11016777号-1</span>
+        <span>Copyright www.miaoxiangkeji.com<br>
+          北京市妙想科技有限公司 (C)2006-2016 ALL RIGHTS RESERVED<br>
+          京ICP备11016777号-1</span>
       </div>
     </div>
   </div>
@@ -234,13 +236,13 @@ export default {
 
     .el-login-footer {
       height: 40px;
-      line-height: 40px;
+      line-height: 20px;
       position: relative;
       width: 100%;
       text-align: center;
       color: #000;
       font-family: Arial;
-      font-size: 12px;
+      font-size: 10px;
       letter-spacing: 1px;
     }
   }
