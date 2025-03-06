@@ -411,7 +411,6 @@ export default {
       listAssignment(this.queryParams).then(response => {
         this.queryParams.orderByColumn = 'id'
         this.assignmentList = response.rows;
-        console.log(this.assignmentList)
         this.total = response.total;
         if (this.assignmentList.length > 0) {
           if (id != null) {

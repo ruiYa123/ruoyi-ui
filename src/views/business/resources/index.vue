@@ -147,7 +147,7 @@
 
           </el-form>
           <el-row>
-            <el-col :span="12" style="display: flex; margin-top: 20px">
+            <el-col v-if="currentNode" :span="12" style="display: flex; margin-top: 20px">
               <el-button type="primary" plain @click="handleAdd">上传图片</el-button>
               <el-button type="success" plain @click="handleDownloadAll">批量下载</el-button>
               <el-button type="danger" @click="handleDeleteBatch" plain>批量删除</el-button>
@@ -578,9 +578,7 @@ export default {
         tree.setCurrentKey(this.currentNode);
       } else {
         tree.setCurrentKey(node.key);
-        console.log(node)
         this.currentNode = node.key
-        console.log(node.key)
         this.selectedAssignmentName = data.label;
         this.selectedProjectName = node.parent.data.label;
       }
