@@ -786,7 +786,6 @@ export default {
           this.$modal.msgSuccess("删除成功");
         }
       } catch (error) {
-        console.error('删除失败:', error);
         this.$modal.msgError("删除失败");
       }
     },
@@ -819,13 +818,13 @@ export default {
         }
 
         // 发送删除请求
-        return delResources({path: path});
+        return delResources({path: path}).catch((error) => {
+          // 处理错误
+          this.$modal.msgError("删除失败: " + (error.message || error)); // 显示错误消息
+        });
       }).then(() => {
         this.getList(); // 刷新列表
         this.$modal.msgSuccess("删除成功"); // 显示成功消息
-      }).catch((error) => {
-        // 处理错误
-        this.$modal.msgError("删除失败: " + (error.message || error)); // 显示错误消息
       });
     },
     handleExport() {
