@@ -584,8 +584,8 @@ export default {
           this.getTrainList(row.id)
         }
       } else {
-        this.trainList = null
-        this.trainTotal = null
+        this.trainList = []
+        this.trainTotal = 0
         this.selectedAssignmentId = null
         this.$refs.assignmentTable.setCurrentRow(null);
         this.assignmentDetail = {};
