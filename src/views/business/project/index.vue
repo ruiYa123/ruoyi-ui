@@ -35,7 +35,7 @@
             <div class="collapse-title">
               <span v-if="activeName === '1'">{{ projectDetail.projectName }}</span>
               <span v-else><i class="el-icon-loading"></i></span>
-              <div class="button-group">
+              <div v-if="projectDetail.id" class="button-group">
                 <el-button type="info" size="mini" plain @click="toResources(projectDetail)">资源管理</el-button>
                 <el-button type="primary" size="mini" plain @click="addAssignment">添加任务</el-button>
                 <el-button type="primary" size="mini" plain @click="handleUpdate(projectDetail)">编辑项目</el-button>
