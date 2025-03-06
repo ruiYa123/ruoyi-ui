@@ -54,14 +54,14 @@
                 @keyup.enter.native="handleQuery"
               />
             </el-form-item>
-            <el-form-item label="预训练模式" prop="pretrainMode">
-              <el-input
-                v-model="queryParams.pretrainMode"
-                placeholder="请输入预训练模式"
-                clearable
-                @keyup.enter.native="handleQuery"
-              />
-            </el-form-item>
+<!--            <el-form-item label="预训练模式" prop="pretrainMode">-->
+<!--              <el-input-->
+<!--                v-model="queryParams.pretrainMode"-->
+<!--                placeholder="请输入预训练模式"-->
+<!--                clearable-->
+<!--                @keyup.enter.native="handleQuery"-->
+<!--              />-->
+<!--            </el-form-item>-->
             <el-form-item>
               <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
               <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -134,11 +134,13 @@
               {{ assignmentDetail.assignmentName }}
             </div>
             <el-button
+              v-if="selectedAssignmentId"
               type="primary"
               plain
               @click="handleAddResource(assignmentDetail)"
             >添加资源</el-button>
             <el-button
+              v-if="selectedAssignmentId"
               type="primary"
               plain
               @click="handleUpdate(assignmentDetail)"
@@ -178,24 +180,26 @@
               <el-collapse-item name="1" title="当前训练">
                 <div style="margin-bottom: 20px">
                   <el-button
-                    v-if="this.queryParams.state === 0 || this.queryParams.state=== 2 || this.queryParams.state===3"
+
+                    v-if="selectedAssignmentId && (this.queryParams.state === 0 || this.queryParams.state=== 2 || this.queryParams.state===3)"
                     type="success"
                     plain
                     @click.stop="startPrioritizeAssignment"
                   >插队训练</el-button>
                   <el-button
-                    v-if="this.queryParams.state === 0 || this.queryParams.state===3"
+                    v-if="selectedAssignmentId && (this.queryParams.state === 0 || this.queryParams.state===3)"
                     type="primary"
                     plain
                     @click.stop="startAssignment"
                   >加入训练队列</el-button>
                   <el-button
-                    v-if="this.queryParams.state === 1 || this.queryParams.state === 2"
+                    v-if="selectedAssignmentId && (this.queryParams.state === 1 || this.queryParams.state === 2)"
                     type="warning"
                     plain
                     @click.stop="stopAssignment"
                   >停止训练</el-button>
                   <el-button
+                    v-if="selectedAssignmentId"
                     type="danger"
                     plain
                     @click.stop
@@ -425,6 +429,8 @@ export default {
           } else {
             this.handleRowClick(this.assignmentList[0])
           }
+        } else {
+          this.handleRowClick(null)
         }
         getStateCounts().then(res => {
           this.completedCount = res.data[0]
@@ -568,14 +574,26 @@ export default {
     },
     handleRowClick(row) {
       this.selectedTrainRecord = null
-      this.selectedAssignmentId = row.id
       this.trainLogs = []
-      this.$refs.assignmentTable.setCurrentRow(row);
       this.activeName = [];
-      this.assignmentDetail = { ...row };
       if (row) {
-        this.getTrainList(row.id)
+        this.selectedAssignmentId = row.id
+        this.$refs.assignmentTable.setCurrentRow(row);
+        this.assignmentDetail = { ...row };
+        if (row) {
+          this.getTrainList(row.id)
+        }
+      } else {
+        this.trainList = null
+        this.trainTotal = null
+        this.selectedAssignmentId = null
+        this.$refs.assignmentTable.setCurrentRow(null);
+        this.assignmentDetail = {};
+        this.selectedTrainRecord = null;
+        this.progress = 0.0
+        this.$refs.trainTable.setCurrentRow(null);
       }
+
 
       setTimeout(() => {
         this.activeName = ["1", "2"];
