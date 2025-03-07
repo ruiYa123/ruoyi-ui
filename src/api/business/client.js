@@ -32,6 +32,13 @@ export function getClientStatus(name) {
   })
 }
 
+export function activeClient(id) {
+  return request({
+    url: '/business/client/active/' + id,
+    method: 'get'
+  })
+}
+
 // 新增客户端
 export function addClient(data) {
   return request({

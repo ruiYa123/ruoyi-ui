@@ -26,7 +26,26 @@
             }"
             @click.native="selectClient(client)"
           >
-            <el-descriptions :title="client.name" :column="1">
+            <el-descriptions :column="1">
+              <template #title>
+                <div class="title-container">
+                  <span>{{ client.name }}</span>
+                  <div class="active-button">
+                    <el-button
+                      @click.stop="activeClientHandler(client)"
+                      :type="client.active === 1 ? 'success' : 'danger'"
+                      size="mini"
+                    >
+                      {{ client.active === 1 ? '已激活' : '未激活' }}
+                    </el-button>
+                  </div>
+                </div>
+              </template>
+              <el-descriptions-item label="客户端名称">
+                <el-row>
+                  <el-col :span="24">{{ client.name }}</el-col>
+                </el-row>
+              </el-descriptions-item>
               <el-descriptions-item label="IP地址">{{ client.ip }}</el-descriptions-item>
               <el-descriptions-item label="端口">{{ client.port }}</el-descriptions-item>
               <el-descriptions-item label="状态">
@@ -34,6 +53,8 @@
               </el-descriptions-item>
             </el-descriptions>
           </el-card>
+
+
         </div>
       </el-col>
 
@@ -265,7 +286,16 @@
 </template>
 
 <script>
-import { getClient, delClient, addClient, updateClient, listAllClient, getClientStatus, sendCommandToClient } from '@/api/business/client'
+import {
+  getClient,
+  delClient,
+  addClient,
+  updateClient,
+  listAllClient,
+  getClientStatus,
+  sendCommandToClient,
+  activeClient
+} from '@/api/business/client'
 import ClientLog from '@/views/business/clientLog/index.vue'
 import PieChart from '@/components/echarts/pieCharts.vue' // 引入饼图组件
 
@@ -444,6 +474,14 @@ export default {
     }
   },
   methods: {
+    activeClientHandler(row) {
+      activeClient(row.id).then(e => {
+        console.log(e)
+        this.$message.success(e.data === 1? '激活客户端成功': '客户端停止接取任务');
+
+        row.active = e.data
+      })
+    },
     calculateUsage(data) {
       let tempData;
       if (!data || data.length === 0) {
@@ -704,6 +742,26 @@ export default {
     cursor: pointer;
     transition: all 0.3s;
 
+    ::v-deep .el-descriptions__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+
+      .title-container {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .active-button {
+          margin-left: 20px;
+          flex-shrink: 0;
+        }
+      }
+    }
+
+
+
     &:hover {
       box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
     }
@@ -859,4 +917,5 @@ export default {
   text-align: center;
   background: #f8f9fa;
 }
+
 </style>

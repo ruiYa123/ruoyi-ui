@@ -425,7 +425,6 @@ export default {
 
 .button-group {
   display: flex;
-  //gap: 8px;
   margin-left: auto;
 }
 
