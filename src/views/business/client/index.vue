@@ -33,10 +33,10 @@
                   <div class="active-button">
                     <el-button
                       @click.stop="activeClientHandler(client)"
-                      :type="client.active === 1 ? 'success' : 'danger'"
+                      :type="client.active === 1 ? 'success' : 'warning'"
                       size="mini"
                     >
-                      {{ client.active === 1 ? '已激活' : '未激活' }}
+                      {{ client.active === 1 ? '已激活' : '休眠' }}
                     </el-button>
                   </div>
                 </div>
@@ -179,9 +179,13 @@
                       type="circle"
                       :width="120"
                       :stroke-width="8"
-                      :color="progressColor"
                     />
-                    <div class="progress-label">训练进度</div>
+<!--                    <div class="progress-label">训练进度</div>-->
+                    <el-button
+                      type="warning" plain
+                      class="progress-label"
+                      @click="stopTrainHandler"
+                    >停止任务</el-button>
                   </el-col>
 
                   <!-- 右侧参数信息 -->
@@ -216,7 +220,7 @@
               </div>
 
               <div v-else class="no-task-panel">
-                <el-empty description="当前没有进行中的训练任务" :image-size="80" />
+                <el-empty description="当前没有进行中的训练任务" :image-size="85" />
               </div>
             </el-collapse-item>
 
@@ -474,11 +478,15 @@ export default {
     }
   },
   methods: {
+    stopTrainHandler() {
+      activeClient(this.selectedClientName).then(e => {
+        this.$message.success('已发送暂停任务指令');
+        row.active = e.data
+      })
+    },
     activeClientHandler(row) {
       activeClient(row.id).then(e => {
-        console.log(e)
         this.$message.success(e.data === 1? '激活客户端成功': '客户端停止接取任务');
-
         row.active = e.data
       })
     },
@@ -742,7 +750,7 @@ export default {
     cursor: pointer;
     transition: all 0.3s;
 
-    ::v-deep .el-descriptions__header {
+    ::v-deep .el-descriptions__title {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -754,7 +762,7 @@ export default {
         justify-content: space-between;
         align-items: center;
         .active-button {
-          margin-left: 20px;
+          margin-left: auto;
           flex-shrink: 0;
         }
       }

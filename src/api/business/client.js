@@ -39,6 +39,13 @@ export function activeClient(id) {
   })
 }
 
+export function stopTrain(name) {
+  return request({
+    url: '/business/client/stopTrain/' + name,
+    method: 'get'
+  })
+}
+
 // 新增客户端
 export function addClient(data) {
   return request({

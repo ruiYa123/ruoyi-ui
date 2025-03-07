@@ -31,6 +31,7 @@
                   default-expand-all
                   highlight-current
                   check-strictly
+                  :filter-node-method="filterNode"
                   @node-click="handleNodeClick"
                   @check-change="handleCheckChange"
                   style="overflow: auto"
@@ -69,7 +70,7 @@
         <pane size="80">
           <!-- 表单和按钮部分 -->
           <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="true" style="display: flex; justify-content: space-between; align-items: center;">
-            <el-form-item style="margin-top: 20px">
+            <el-form-item v-if="selectedProjectName && selectedAssignmentName" style="margin-top: 20px">
               <el-tag>
                 {{selectedProjectName}}
               </el-tag>
@@ -556,6 +557,7 @@ export default {
       return data.label.includes(value);
     },
     handleFilter() {
+      console.log(this.filterText )
       this.$refs.tree.filter(this.filterText);
     },
     selectCard(index) {
@@ -696,7 +698,16 @@ export default {
       this.getList();
     },
     resetQuery() {
-      this.resetForm("queryForm");
+      this.queryParams =  {
+        pageNum: 1,
+          pageSize: this.queryParams.pageSize,
+          imgName: null,
+          assignmentId: null,
+          imgPath: null,
+          imgSize: null,
+          description: null,
+          state: null,
+      },
       this.handleQuery();
     },
     handleSelectionChange(selection) {
