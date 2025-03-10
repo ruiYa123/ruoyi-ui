@@ -17,6 +17,13 @@ export function listImages(query) {
   })
 }
 
+export function getImage(path) {
+  return request({
+    url: '/business/resources/getImage/' + path,
+    method: 'get'
+  })
+}
+
 export function listAll(query) {
   return request({
     url: '/business/resources/listAll',

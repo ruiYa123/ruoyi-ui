@@ -1,7 +1,7 @@
 // src/config/config.js
 const config = {
   fileServer: {
-    ip: '192.168.1.144',
+    ip: '192.168.1.96',
     port: 12345
   }
 };

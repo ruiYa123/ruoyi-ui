@@ -268,7 +268,7 @@ import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import {
   addResources,
-  delResources,
+  delResources, getImage,
   getResources,
   listAll,
   listImages,
@@ -426,47 +426,42 @@ export default {
     getRelativePath(fullPath) {
       return `http://${config.fileServer.ip}:${config.fileServer.port}/${fullPath}`;
     },
+    getImage(fullPath) {
+      return getImage(fullPath)
+    },
     async downloadFolder(node) {
       let notifyInstance;
       try {
+        // 显示通知，表示正在下载资源
         notifyInstance = Notification({
-          message: node.data.label + '  资源打包中...',
+          message: node.data.label + '  资源下载中...',
           type: 'info',
           duration: 0, // 持续显示，直到手动关闭
           iconClass: 'el-icon-loading'
         });
-        const zip = new JSZip();
-        const projectName = node.parent.data.label;
-        const assignmentName = node.data.label;
-        const zipName = `${projectName}_${assignmentName}.zip`;
 
-        const response = await listAll({ projectName: projectName, assignmentName: assignmentName });
-        const files = [];
+        const projectName = node.parent.data.label; // 获取项目名称
+        const assignmentName = node.data.label; // 获取任务名称
+        const zipName = `${projectName}_${assignmentName}_resources.zip`; // ZIP 文件名
 
-        response.data.forEach(item => {
-          files.push(item.path);
-          if (item.jsonPath) files.push(item.jsonPath);
-        });
+        // 构建下载文件夹的 URL
+        const folderPath = encodeURIComponent(`${projectName}/${assignmentName}`); // 假设文件夹路径为 /项目名/任务名
+        const downloadUrl = `http://localhost:12345/download/${folderPath}`; // 替换为实际服务器地址
 
-        for (const filePath of files) {
-          const relativePath = this.getRelativePath(filePath).replace(/\\/g, '/');
-          const fetchResponse = await fetch(relativePath);
-          if (!fetchResponse.ok) throw new Error(`无法下载文件: ${relativePath}`);
-          const blob = await fetchResponse.blob();
-          console.log(relativePath)
-          const fileName = relativePath.split('/').slice(-3).join('/'); // 去除项目名和任务名前的路径
-          zip.file(fileName, blob);
-        }
+        // 发起下载请求
+        const response = await fetch(downloadUrl);
+        if (!response.ok) throw new Error(`无法下载文件夹: ${downloadUrl}`);
 
-        // 生成并下载ZIP
-        const content = await zip.generateAsync({ type: 'blob' });
+        const content = await response.blob(); // 将响应转换为 Blob
+
+        // 下载 ZIP 文件
         saveAs(content, zipName);
-        this.updateNotification(notifyInstance, node.data.label + '  资源打包成功，开始下载', 'success')
+        this.updateNotification(notifyInstance, node.data.label + '  资源下载成功', 'success');
 
       } catch (error) {
         console.error('下载失败:', error);
         this.$message.error('压缩包下载失败');
-        this.updateNotification(notifyInstance, node.data.label + '  压缩包下载失败', 'error')
+        this.updateNotification(notifyInstance, node.data.label + '  压缩包下载失败', 'error');
       }
     },
     handleDownloadAll() {

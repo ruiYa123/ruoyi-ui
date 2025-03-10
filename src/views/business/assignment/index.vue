@@ -135,6 +135,12 @@
             </div>
             <el-button
               v-if="selectedAssignmentId"
+              type="success"
+              plain
+              @click="downloadModel(assignmentDetail)"
+            >下载模型</el-button>
+            <el-button
+              v-if="selectedAssignmentId"
               type="primary"
               plain
               @click="handleAddResource(assignmentDetail)"
@@ -291,6 +297,8 @@ import {
 import { getTrain, listTrain } from '@/api/business/train'
 import AddAssignmentDialog from '@/views/business/assignment/addAssignmentDialog.vue'
 import { listTrainLog } from '@/api/business/trainLog'
+import JSZip from 'jszip'
+import config from '@/config'
 
 export default {
   components: { Splitpanes, Pane, AddAssignmentDialog },
@@ -378,6 +386,59 @@ export default {
       });
   },
   methods: {
+    downloadModel(detail) {
+      let notifyInstance;
+      try {
+        // 显示通知，表示正在打包资源
+        notifyInstance = this.$notify({
+          message: `${detail.assignmentName} 资源下载中...`,
+          type: 'info',
+          duration: 0, // 持续显示，直到手动关闭
+          iconClass: 'el-icon-loading'
+        });
+
+        const projectName = this.getProjectName(detail.projectId); // 获取项目名称
+        const assignmentName = detail.assignmentName; // 获取任务名称
+        const zipName = `${projectName}_${assignmentName}_model.zip`; // ZIP 文件名
+
+        // 构建文件夹路径
+        const folderPath = `${projectName}_${assignmentName}`;
+
+        // 构建下载文件夹的 URL
+        const downloadUrl = `http://${config.fileServer.ip}:${config.fileServer.port}/download/${folderPath}`; // 假设你的服务器在这个地址
+
+        // 发起下载请求
+        fetch(downloadUrl)
+          .then(response => {
+            if (!response.ok) throw new Error(`无法下载文件夹: ${downloadUrl}`);
+            return response.blob(); // 将响应转换为 Blob
+          })
+          .then(content => {
+            // 下载 ZIP 文件
+            saveAs(content, zipName);
+            notifyInstance.close();
+            notifyInstance = this.$notify({
+              message: `${detail.assignmentName} 资源下载成功`,
+              type: 'success'
+            });
+          })
+          .catch(error => {
+            console.error('下载失败:', error);
+            notifyInstance.close();
+            this.$message.error('压缩包下载失败');
+            notifyInstance = this.$notify({
+              message: `${detail.assignmentName} 压缩包下载失败`,
+              type: 'error'
+            });
+          });
+      } catch (error) {
+        console.error('下载失败:', error);
+        this.$message.error('压缩包下载失败');
+        if (notifyInstance) {
+          notifyInstance.close();
+        }
+      }
+    },
     stopAssignment() {
       stopAssignment(this.selectedAssignmentId).then(() => {
         this.getList(this.selectedAssignmentId, 3)
