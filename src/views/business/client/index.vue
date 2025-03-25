@@ -36,7 +36,7 @@
                       :type="client.active === 1 ? 'success' : 'warning'"
                       size="mini"
                     >
-                      {{ client.active === 1 ? '已激活' : '休眠' }}
+                      {{ client.active === 1 ? '已激活' : '已禁用' }}
                     </el-button>
                   </div>
                 </div>
@@ -298,7 +298,7 @@ import {
   listAllClient,
   getClientStatus,
   sendCommandToClient,
-  activeClient
+  activeClient, stopTrain
 } from '@/api/business/client'
 import ClientLog from '@/views/business/clientLog/index.vue'
 import PieChart from '@/components/echarts/pieCharts.vue' // 引入饼图组件
@@ -479,7 +479,7 @@ export default {
   },
   methods: {
     stopTrainHandler() {
-      activeClient(this.selectedClientName).then(e => {
+      stopTrain(this.selectedClientName).then(e => {
         this.$message.success('已发送暂停任务指令');
         row.active = e.data
       })
