@@ -609,7 +609,7 @@ export default {
           return []
         }
         return [
-          { value: value, name: '已使用' },
+          { value: Number(value.toFixed(2)), name: '已使用' },
           { value: Number((100 - value).toFixed(2)), name: '剩余' }
         ];
       }
