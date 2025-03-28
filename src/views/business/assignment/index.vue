@@ -54,14 +54,6 @@
                 @keyup.enter.native="handleQuery"
               />
             </el-form-item>
-<!--            <el-form-item label="预训练模式" prop="pretrainMode">-->
-<!--              <el-input-->
-<!--                v-model="queryParams.pretrainMode"-->
-<!--                placeholder="请输入预训练模式"-->
-<!--                clearable-->
-<!--                @keyup.enter.native="handleQuery"-->
-<!--              />-->
-<!--            </el-form-item>-->
             <el-form-item>
               <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
               <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -162,12 +154,12 @@
               <el-descriptions-item label="创建时间" :span="2">
                 {{ assignmentDetail.createTime || '暂无数据' }}
               </el-descriptions-item>
-              <el-descriptions-item label="模型">
-                {{ getModelName(assignmentDetail.modelId) || '暂无数据' }}
-              </el-descriptions-item>
-              <el-descriptions-item label="资源数量">
-                {{ assignmentDetail.resourceCount || '暂无数据' }}
-              </el-descriptions-item>
+<!--              <el-descriptions-item label="模型">-->
+<!--                {{ getModelName(assignmentDetail.modelId) || '暂无数据' }}-->
+<!--              </el-descriptions-item>-->
+<!--              <el-descriptions-item label="资源数量">-->
+<!--                {{ assignmentDetail.resourceCount || '暂无数据' }}-->
+<!--              </el-descriptions-item>-->
               <el-descriptions-item label="训练次数">
                 {{ assignmentDetail.epoch || '暂无数据' }}
               </el-descriptions-item>
@@ -296,6 +288,7 @@ import {
 } from '@/api/business/assignment'
 import { getTrain, listTrain } from '@/api/business/train'
 import AddAssignmentDialog from '@/views/business/assignment/addAssignmentDialog.vue'
+import resources from '@/views/business/resources/index.vue'
 import { listTrainLog } from '@/api/business/trainLog'
 import JSZip from 'jszip'
 import config from '@/config'
@@ -715,7 +708,8 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids;
-      this.$modal.confirm('是否确认删除任务：' + row.assignmentName + '?').then(function () {
+      this.$modal.confirm('是否确认删除任务：' + row.assignmentName + '?').then(res => {
+        resources.methods.handleDeleteDirectory(this.getProjectName(row.projectId), row.assignmentName)
         return delAssignment(ids);
       }).then(() => {
         this.getList();

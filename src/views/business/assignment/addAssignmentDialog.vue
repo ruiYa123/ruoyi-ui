@@ -14,23 +14,23 @@
           </el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="关联模型" prop="modelId">
-        <el-select v-model="localForm.modelId" placeholder="请选择关联模型">
-          <el-option
-            v-for="model in modelOptions"
-            :key="model.id"
-            :label="model.name"
-            :value="model.id">
-          </el-option>
-        </el-select>
-      </el-form-item>
+<!--      <el-form-item label="关联模型" prop="modelId">-->
+<!--        <el-select v-model="localForm.modelId" placeholder="请选择关联模型">-->
+<!--          <el-option-->
+<!--            v-for="model in modelOptions"-->
+<!--            :key="model.id"-->
+<!--            :label="model.name"-->
+<!--            :value="model.id">-->
+<!--          </el-option>-->
+<!--        </el-select>-->
+<!--      </el-form-item>-->
       <el-form-item label="预训练模式" prop="pretrainMode">
         <el-select v-model="localForm.pretrainMode" placeholder="请选择预训练模式">
-          <el-option label="N" value="N"></el-option>
-          <el-option label="S" value="S"></el-option>
-          <el-option label="M" value="M"></el-option>
-          <el-option label="L" value="L"></el-option>
-          <el-option label="X" value="X"></el-option>
+          <el-option label="微型模型" value="N"></el-option>
+          <el-option label="小型模型" value="S"></el-option>
+          <el-option label="中型模型" value="M"></el-option>
+          <el-option label="大型模型" value="L"></el-option>
+          <el-option label="超大型模型" value="X"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="训练次数" prop="epoch">

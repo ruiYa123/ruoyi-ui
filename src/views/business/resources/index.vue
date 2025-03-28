@@ -51,7 +51,7 @@
                       </el-button>
                     </span>
                     <span v-if="node.level === 2" style="margin-left: auto;">
-                      <el-button type="text" size="mini" @click="removeDirectory(node)" @click.stop>
+                      <el-button type="text" size="mini" @click="removeDirectory(node.parent.data.label, node.data.label)" @click.stop>
                         <i class="el-icon-close" style="color: #FF4949"></i>
                       </el-button>
                       <el-button type="text" size="mini" @click="downloadFolder(node)" @click.stop>
@@ -184,7 +184,7 @@
                   }"
 
                 >
-                  <img :src="getImage(item.path)" class="image"  alt="" style="height: 300px;"/>
+                  <img :src="getRelativePath(item.path)" class="image"  alt="" style="height: 300px;"/>
                   <div style="padding: 14px;">
                     <div style="height: 40px">
                       <span >{{ item.name }}</span>
@@ -794,9 +794,10 @@ export default {
         }
       });
     },
-    async removeDirectory(node) {
-      const projectName = node.parent.data.label;
-      const assignmentName = node.data.label;
+    async removeDirectory(parentLable, label) {
+      const projectName = parentLable;
+      const assignmentName = label;
+      await this.$modal.confirm(`是否确认删除 ${assignmentName} 的所有资源？`);
 
       const confirm = await this.$modal.confirm(`是否确认删除 ${assignmentName} 的所有资源？`);
 
@@ -815,6 +816,18 @@ export default {
       } catch (error) {
         this.$modal.msgError("删除失败");
       }
+    },
+
+    handleDeleteDirectory(projectName, assignmentName) {
+        listAll({ projectName: projectName, assignmentName: assignmentName }).then(response => {
+          console.log(response)
+          const paths = response.data.reduce((acc, item) => {
+            acc.push(item.path);
+            if (item.jsonPath) acc.push(item.jsonPath);
+            return acc;
+          }, []);
+          delResources({ path: paths });
+        });
     },
 
     handleDeleteBatch() {
