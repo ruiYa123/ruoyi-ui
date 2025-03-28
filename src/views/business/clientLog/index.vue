@@ -121,6 +121,7 @@ export default {
         pageSize: 10,
         clientId: null,
         commandStr: null,
+        orderByColumn: 'createTime',
         state: 1
       },
       clientOptions: [],

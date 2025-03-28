@@ -184,7 +184,7 @@
                   }"
 
                 >
-                  <img :src="getRelativePath(item.path)" class="image"  alt="" style="height: 300px;"/>
+                  <img :src="getImage(item.path)" class="image"  alt="" style="height: 300px;"/>
                   <div style="padding: 14px;">
                     <div style="height: 40px">
                       <span >{{ item.name }}</span>

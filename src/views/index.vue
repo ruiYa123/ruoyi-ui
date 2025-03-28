@@ -1,40 +1,40 @@
 <template>
   <div class="dashboard-container">
     <!-- 顶部统计卡片 -->
-    <el-row :gutter="20" class="mb-20">
-      <el-col :span="8">
-        <el-card shadow="hover">
-          <div class="stat-item">
-            <div class="stat-title">总项目数</div>
-            <div class="stat-value">{{ projectTotal }}</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card shadow="hover">
-          <div class="stat-item">
-            <div class="stat-title">总任务数</div>
-            <div class="stat-value">{{ assignmentTotal }}</div>
-          </div>
-        </el-card>
-      </el-col>
-<!--      <el-col :span="8">-->
-<!--        <el-card shadow="hover">-->
-<!--          <div class="stat-item">-->
-<!--            <div class="stat-title">在线客户端</div>-->
-<!--            <div class="stat-value">{{ onlineClients }}</div>-->
-<!--          </div>-->
-<!--        </el-card>-->
-<!--      </el-col>-->
+      <el-row :gutter="20" class="mb-20">
         <el-col :span="8">
           <el-card shadow="hover">
             <div class="stat-item">
-              <div class="stat-title">训练中任务数</div>
-              <div class="stat-value">{{ trainingAssignment }}</div>
+              <div class="stat-title">总项目数</div>
+              <div class="stat-value">{{ projectTotal }}</div>
             </div>
           </el-card>
         </el-col>
-    </el-row>
+        <el-col :span="8">
+          <el-card shadow="hover">
+            <div class="stat-item">
+              <div class="stat-title">总任务数</div>
+              <div class="stat-value">{{ assignmentTotal }}</div>
+            </div>
+          </el-card>
+        </el-col>
+  <!--      <el-col :span="8">-->
+  <!--        <el-card shadow="hover">-->
+  <!--          <div class="stat-item">-->
+  <!--            <div class="stat-title">在线客户端</div>-->
+  <!--            <div class="stat-value">{{ onlineClients }}</div>-->
+  <!--          </div>-->
+  <!--        </el-card>-->
+  <!--      </el-col>-->
+          <el-col :span="8">
+            <el-card shadow="hover">
+              <div class="stat-item">
+                <div class="stat-title">训练中任务数</div>
+                <div class="stat-value">{{ trainingAssignment }}</div>
+              </div>
+            </el-card>
+          </el-col>
+      </el-row>
 
     <!-- 任务状态分布图表 -->
     <el-row :gutter="20">
@@ -374,7 +374,7 @@ export default {
 }
 
 .mb-20 {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .assignment-card {
