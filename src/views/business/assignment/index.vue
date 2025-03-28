@@ -164,7 +164,7 @@
                 {{ assignmentDetail.epoch || '暂无数据' }}
               </el-descriptions-item>
               <el-descriptions-item label="预训练模式">
-                {{ assignmentDetail.pretrainMode || '暂无数据' }}
+                {{ assignmentDetail.pretrainMode | modelFilter }}
               </el-descriptions-item>
               <el-descriptions-item label="批大小">
                 {{ assignmentDetail.batchSize || '暂无数据' }}
@@ -294,7 +294,20 @@ import JSZip from 'jszip'
 import config from '@/config'
 
 export default {
+  name: "Assignment",
   components: { Splitpanes, Pane, AddAssignmentDialog },
+  filters: {
+    modelFilter(model) {
+      const modelMap = {
+        'N': '微型模型',
+        'S': '小型模型',
+        'M': '中型模型',
+        'L': '大型模型',
+        'X': '超大型模型'
+      }
+      return modelMap[model] || '暂无数据'
+    }
+  },
   data() {
     return {
       assignmentDetail: {},
@@ -708,7 +721,7 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids;
-      this.$modal.confirm('是否确认删除任务：' + row.assignmentName + '?').then(res => {
+      this.$modal.confirm('是否确认删除任务：' + row.assignmentName + '?').then(() => {
         resources.methods.handleDeleteDirectory(this.getProjectName(row.projectId), row.assignmentName)
         return delAssignment(ids);
       }).then(() => {

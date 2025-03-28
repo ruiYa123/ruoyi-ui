@@ -36,7 +36,7 @@
                       :type="client.active === 1 ? 'success' : 'warning'"
                       size="mini"
                     >
-                      {{ client.active === 1 ? '已激活' : '已禁用' }}
+                      {{ client.active === 1 ? '已激活' : '休眠' }}
                     </el-button>
                   </div>
                 </div>
