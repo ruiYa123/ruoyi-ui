@@ -61,7 +61,7 @@ export default {
           type: 'value',
           name: 'Value',
           min: 0,
-          max: 1,
+          // max: 1,
         },
         series: [
           {
