@@ -16,6 +16,14 @@ export function listAllAssignment(query) {
     params: query
   })
 }
+
+export function getProcessChart(projectName, assignmentName) {
+  return request({
+    url: '/business/assignment/' + projectName + '/' + assignmentName,
+    method: 'get'
+  })
+}
+
 export function listTraining(query) {
   return request({
     url: '/business/assignment/listTraining',

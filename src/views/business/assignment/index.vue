@@ -83,11 +83,6 @@
                   {{ getProjectName(scope.row.projectId) }}
                 </template>
               </el-table-column>
-              <el-table-column label="使用模型" align="center">
-                <template v-slot="scope">
-                  {{ getModelName(scope.row.modelId) }}
-                </template>
-              </el-table-column>
               <el-table-column label="描述" align="center" prop="description" />
               <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
                 <template slot-scope="scope">
@@ -120,7 +115,7 @@
             @pagination="getListPage"
           />
         </pane>
-        <pane size="60">
+        <pane size="60" style="overflow-y: auto; max-height: 100vh; display: flex; flex-direction: column;">
           <div style="display: flex; justify-content: flex-end; align-items: center;">
             <div style="flex-grow: 1; font-size: 24px; font-weight: bold">
               {{ assignmentDetail.assignmentName }}
@@ -146,7 +141,7 @@
           </div>
 
           <el-divider></el-divider>
-          <div style="overflow: auto; height: 780px">
+          <div style="overflow-y: auto; max-height: calc(100vh - 200px);"> <!-- Adjust height as needed -->
             <el-descriptions :column="2" border v-loading="loading">
               <el-descriptions-item label="所属项目" :span="2">
                 {{ getProjectName(assignmentDetail.projectId) || '暂无数据' }}
@@ -154,12 +149,6 @@
               <el-descriptions-item label="创建时间" :span="2">
                 {{ assignmentDetail.createTime || '暂无数据' }}
               </el-descriptions-item>
-<!--              <el-descriptions-item label="模型">-->
-<!--                {{ getModelName(assignmentDetail.modelId) || '暂无数据' }}-->
-<!--              </el-descriptions-item>-->
-<!--              <el-descriptions-item label="资源数量">-->
-<!--                {{ assignmentDetail.resourceCount || '暂无数据' }}-->
-<!--              </el-descriptions-item>-->
               <el-descriptions-item label="训练次数">
                 {{ assignmentDetail.epoch || '暂无数据' }}
               </el-descriptions-item>
@@ -176,9 +165,8 @@
 
             <el-collapse v-model="activeName" class="custom-collapse">
               <el-collapse-item name="1" title="当前训练">
-                <div style="margin-bottom: 20px">
+                <div style="margin-bottom: 20px;">
                   <el-button
-
                     v-if="selectedAssignmentId && (this.queryParams.state === 0 || this.queryParams.state=== 2 || this.queryParams.state===3)"
                     type="success"
                     plain
@@ -205,20 +193,22 @@
                     v-hasPermi="['business:assignment:remove']"
                   >删除任务</el-button>
                 </div>
-                <div class="container">
-                  <el-progress type="circle" :percentage="progress" style="margin: 10px"></el-progress>
-                  <el-card class="box-card">
-                    <div slot="header" class="clearfix" style="font-size: 20px; font-weight: bold">
-                      <span>训练日志</span>
-  <!--                    <el-button style="float: right; padding: 3px 0" type="text">清空日志</el-button>-->
+                <div class="container" style="min-height: 350px">
+                  <div v-if="activeName.includes('1')" style="display: flex; align-items: center;">
+                    <div style="margin: 10px;">
+                      <el-progress type="circle" :percentage="progress"></el-progress>
                     </div>
-                    <div class="card-content"  @scroll="handleScroll">
-                      <div v-for="trainLog in trainLogs" :key="trainLog.index" class="text item">
-                        <span>{{ trainLog.content }}</span>
-                        <span class="create-time">{{ trainLog.createTime }}</span>
-                      </div>
+                    <div v-if="assignmentDetail.state === 1" style="margin-left: 10px;">
+                      <LineChart :data="jsonData"/>
                     </div>
-                  </el-card>
+                    <div v-if="assignmentDetail.state === 0" style="margin-left: 10px;">
+                      <img
+                        :src="getRelativePath(getProjectName(assignmentDetail.projectId) + '_' + assignmentDetail.assignmentName)"
+                        alt="训练状态图像"
+                        style="max-width: 100%; height: 350px;"
+                      />
+                    </div>
+                  </div>
                 </div>
               </el-collapse-item>
               <el-collapse-item name="2" title="训练记录">
@@ -231,7 +221,7 @@
                     @row-click="handleTrainRowClick"
                     highlight-current-row
                   >
-                  <el-table-column label="轮次" align="center" width="80">
+                    <el-table-column label="轮次" align="center" width="80">
                       <template slot-scope="scope">
                         {{ trainTotal - (trainQueryParams.pageNum - 1) * trainQueryParams.pageSize - scope.$index }}
                       </template>
@@ -259,9 +249,23 @@
                   />
                 </div>
               </el-collapse-item>
+              <el-collapse-item v-if="checkRole(['admin'])" name="3" title="训练日志">
+                <el-card class="box-card">
+                  <div slot="header" class="clearfix" style="font-size: 20px; font-weight: bold">
+                    <span>训练日志</span>
+                  </div>
+                  <div class="card-content" @scroll="handleScroll">
+                    <div v-for="trainLog in trainLogs" :key="trainLog.index" class="text item">
+                      <span>{{ trainLog.content }}</span>
+                      <span class="create-time">{{ trainLog.createTime }}</span>
+                    </div>
+                  </div>
+                </el-card>
+              </el-collapse-item>
             </el-collapse>
           </div>
         </pane>
+
       </splitpanes>
     </el-row>
     <add-assignment-dialog
@@ -277,10 +281,9 @@
 <script>
 import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
-import { getModel, listModel } from '@/api/business/model'
 import { getProject, listAllProject } from '@/api/business/project'
 import {
-  delAssignment, getAssignment,
+  delAssignment, getAssignment, getProcessChart,
   getStateCounts,
   listAssignment,
   startAssignment,
@@ -290,12 +293,13 @@ import { getTrain, listTrain } from '@/api/business/train'
 import AddAssignmentDialog from '@/views/business/assignment/addAssignmentDialog.vue'
 import resources from '@/views/business/resources/index.vue'
 import { listTrainLog } from '@/api/business/trainLog'
-import JSZip from 'jszip'
 import config from '@/config'
+import LineChart from '@/views/dashboard/LineChart.vue'
+import { checkRole } from '@/utils/permission'
 
 export default {
   name: "Assignment",
-  components: { Splitpanes, Pane, AddAssignmentDialog },
+  components: { LineChart, Splitpanes, Pane, AddAssignmentDialog },
   filters: {
     modelFilter(model) {
       const modelMap = {
@@ -310,6 +314,8 @@ export default {
   },
   data() {
     return {
+      jsonData: {
+      },
       assignmentDetail: {},
       selectedAssignmentId: null,
 
@@ -369,12 +375,13 @@ export default {
       },
       // 表单参数
       form: {},
-      modelOptions: [],
       projectOptions: [],
-      activeName: ["1", "2"],
+      activeName: ["1"],
       trainLogs: {},
       trainLogTotal: 0,
-      selectedTrainRecord: null
+      selectedTrainRecord: null,
+      currentIndex: 0,
+      intervalId: null,
     };
   },
   beforeDestroy() {
@@ -383,15 +390,45 @@ export default {
     }
   },
   created() {
-    Promise.all([this.getProjectList(), this.getModelList()])
+    Promise.all([this.getProjectList()])
       .then(() => {
         this.queryParams.state = this.$route.query.state ? parseInt(this.$route.query.state) : 1
         const id = this.$route.query.id;
         this.getList(id);
         this.startFetchingLogs();
       });
+    this.startInterval();
+
+
   },
   methods: {
+    checkRole,
+    getRelativePath(fullPath) {
+      console.log(fullPath)
+      return `http://${config.fileServer.ip}:${config.fileServer.port}/${fullPath}/BoxPR_curve.png`;
+    },
+    startInterval() {
+      if (this.intervalId) return; // 防止重复启动
+
+      this.intervalId = setInterval(() => {
+        if (this.assignmentDetail.state === 1) {
+          getProcessChart(
+            this.getProjectName(this.assignmentDetail.projectId),
+            this.assignmentDetail.assignmentName)
+            .then(res => {
+              Object.keys(res.data).forEach(key => {
+                this.$set(this.jsonData, key, res.data[key]);
+              });
+            })
+
+          // this.$set(this.jsonData, this.currentIndex, [lossValue, accuracyValue]);
+        } else {
+          clearInterval(this.intervalId);
+          this.intervalId = null;
+        }
+      }, 1000);
+
+    },
     downloadModel(detail) {
       let notifyInstance;
       try {
@@ -412,7 +449,6 @@ export default {
 
         // 构建下载文件夹的 URL
         const downloadUrl = `http://${config.fileServer.ip}:${config.fileServer.port}/download/${folderPath}`; // 假设你的服务器在这个地址
-
         // 发起下载请求
         fetch(downloadUrl)
           .then(response => {
@@ -596,20 +632,6 @@ export default {
         return project ? project.name : null;
       }
     },
-    getModelName(id) {
-      if (id) {
-        const model = this.modelOptions.find(option => option.id === id);
-        return model ? model.name : null;
-      }
-    },
-    getModelList() {
-      listModel().then(response=> {
-        this.modelOptions = response.rows.map(item => ({
-          id: item.id,
-          name: item.modelName
-        }))
-      })
-    },
     getProjectList() {
       listAllProject().then(response => {
         this.projectOptions = response.data.map(item => ({
@@ -662,7 +684,7 @@ export default {
 
 
       setTimeout(() => {
-        this.activeName = ["1", "2"];
+        this.activeName = ["1"];
       }, 500);
     },
     /** 搜索按钮操作 */

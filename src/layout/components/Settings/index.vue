@@ -118,7 +118,6 @@ export default {
     },
     tagsView: {
       get() {
-        console.log(this.$store.state.settings.tagsView)
         return this.$store.state.settings.tagsView
       },
       set(val) {

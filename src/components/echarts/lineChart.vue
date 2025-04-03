@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div ref="chart" style="width: 700px; height: 350px;"></div>
+    <div ref="chart" style="width: 100%; height: 400px;"></div>
   </div>
 </template>
 
@@ -26,19 +26,18 @@ export default {
   watch: {
     data: {
       handler: 'renderChart',
-      deep: true,
+      deep: true, // 深度监听，以便在数据结构变化时重新渲染图表
     },
   },
   methods: {
     renderChart() {
-      console.log('updateLineChart')
-      const labels = Array.from({ length: 101 }, (_, i) => i);
-      const lossData = labels.map(key => (this.data[key] ? this.data[key][0] : null));
-      const accuracyData = labels.map(key => (this.data[key] ? this.data[key][1] : null));
+      const labels = Object.keys(this.data);
+      const lossData = labels.map(key => this.data[key][0]);
+      const accuracyData = labels.map(key => this.data[key][1]);
 
       const option = {
         title: {
-          text: 'Loss and Accuracy Curve',
+          text: 'Loss and Accuracy over Training Progress',
         },
         tooltip: {
           trigger: 'axis',
@@ -50,8 +49,6 @@ export default {
           type: 'category',
           data: labels,
           name: 'Training Progress (%)',
-          nameLocation: 'middle', // 将名称放在坐标轴中间
-          nameGap: 30, // 调整名称与坐标轴之间的距离
         },
         yAxis: {
           type: 'value',
@@ -68,8 +65,6 @@ export default {
             lineStyle: {
               color: 'rgba(255, 99, 132, 1)',
             },
-            connectNulls: true, // 连接空值
-            showSymbol: false
           },
           {
             name: 'Accuracy',
@@ -79,16 +74,15 @@ export default {
             lineStyle: {
               color: 'rgba(54, 162, 235, 1)',
             },
-            connectNulls: true, // 连接空值
-            showSymbol: false
           },
         ],
       };
 
-      this.myChart.setOption(option, { notMerge: true });
+      this.myChart.setOption(option);
     },
   },
   beforeDestroy() {
+    // 清理 ECharts 实例
     if (this.myChart) {
       this.myChart.dispose();
     }
@@ -97,5 +91,5 @@ export default {
 </script>
 
 <style scoped>
-/* 这里可以添加样式 */
+
 </style>

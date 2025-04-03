@@ -26,7 +26,7 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
+      <el-col v-if="checkRole(['admin'])" :span="1.5">
         <el-button
           type="primary"
           plain
@@ -102,7 +102,7 @@
         <el-row>
           <el-col :span="24" v-if="form.parentId !== 0">
             <el-form-item label="上级部门" prop="parentId">
-              <treeselect v-model="form.parentId" :options="deptOptions" :normalizer="normalizer" placeholder="选择上级部门" />
+              <treeselect v-model="form.parentId" :options="deptOptions" :normalizer="normalizer" placeholder="选择上级部门" :clearable="checkRole(['admin'])"/>
             </el-form-item>
           </el-col>
         </el-row>
@@ -161,6 +161,7 @@
 import { listDept, getDept, delDept, addDept, updateDept, listDeptExcludeChild } from "@/api/system/dept";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
+import { checkRole } from '@/utils/permission'
 
 export default {
   name: "Dept",
@@ -223,6 +224,7 @@ export default {
     this.getList();
   },
   methods: {
+    checkRole,
     /** 查询部门列表 */
     getList() {
       this.loading = true;

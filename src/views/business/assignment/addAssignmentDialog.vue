@@ -14,16 +14,6 @@
           </el-option>
         </el-select>
       </el-form-item>
-<!--      <el-form-item label="关联模型" prop="modelId">-->
-<!--        <el-select v-model="localForm.modelId" placeholder="请选择关联模型">-->
-<!--          <el-option-->
-<!--            v-for="model in modelOptions"-->
-<!--            :key="model.id"-->
-<!--            :label="model.name"-->
-<!--            :value="model.id">-->
-<!--          </el-option>-->
-<!--        </el-select>-->
-<!--      </el-form-item>-->
       <el-form-item label="预训练模式" prop="pretrainMode">
         <el-select v-model="localForm.pretrainMode" placeholder="请选择预训练模式">
           <el-option label="微型模型" value="N"></el-option>
@@ -54,7 +44,6 @@
 </template>
 
 <script>
-import { listModel } from '@/api/business/model';
 import { listProject } from '@/api/business/project';
 import { addAssignment, updateAssignment } from '@/api/business/assignment'
 
@@ -76,7 +65,6 @@ export default {
   data() {
     return {
       projectOptions: [],
-      modelOptions: [],
       rules: {
         assignmentName: [
           { required: true, message: "任务名称不能为空", trigger: "blur" }
@@ -84,9 +72,7 @@ export default {
         projectId: [
           { required: true, message: "关联的项目不能为空", trigger: "blur" }
         ],
-        modelId: [
-          { required: true, message: "关联的模型不能为空", trigger: "blur" }
-        ],
+
         pretrainMode: [
           { required: true, message: "预训练模式不能为空", trigger: "blur" }
         ],
@@ -141,7 +127,7 @@ export default {
   },
   created() {
     this.getProjectList();
-    this.getModelList();
+
   },
   watch: {
     open(newVal) {
@@ -169,14 +155,6 @@ export default {
     }
   },
   methods: {
-    getModelList() {
-      listModel().then(response => {
-        this.modelOptions = response.rows.map(item => ({
-          id: item.id,
-          name: item.modelName
-        }))
-      })
-    },
     getProjectList() {
       listProject().then(response => {
         this.projectOptions = response.rows.map(item => ({
@@ -209,7 +187,6 @@ export default {
         id: null,
         assignmentName: null,
         projectId: null,
-        modelId: null,
         pretrainMode: null,
         epoch: null,
         batchSize: null,

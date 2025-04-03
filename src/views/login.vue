@@ -77,6 +77,9 @@ import { getCodeImg } from "@/api/login";
 import Cookies from "js-cookie";
 import { encrypt, decrypt } from '@/utils/jsencrypt'
 import logoImg from '@/assets/logo/miaoxiang.png'
+import { Notification } from 'element-ui'
+import { listAllNotice } from '@/api/system/notice'
+import { mapGetters, mapActions } from 'vuex';
 
 export default {
   name: "Login",
@@ -108,6 +111,9 @@ export default {
       redirect: undefined
     };
   },
+  computed: {
+    ...mapGetters(['notices'])
+  },
   watch: {
     $route: {
       handler: function(route) {
@@ -121,6 +127,7 @@ export default {
     this.getCookie();
   },
   methods: {
+    ...mapActions('notice', ['fetchNotices', 'addNotice', 'removeNotice']),
     getCode() {
       getCodeImg().then(res => {
         this.captchaEnabled = res.captchaEnabled === undefined ? true : res.captchaEnabled;
@@ -155,6 +162,17 @@ export default {
           }
           this.$store.dispatch("Login", this.loginForm).then(() => {
             this.$router.push({ path: this.redirect || "/" }).catch(()=>{});
+
+            this.fetchNotices().then(() => {
+              const notifyInstance = Notification({
+                title: '欢迎回来',
+                message: ' 您有' + this.notices.length + '条消息需要查看, 请在首页查阅',
+                type: 'info',
+                duration: 5000,
+                offset: 50
+              });
+            })
+
           }).catch(() => {
             this.loading = false;
             if (this.captchaEnabled) {

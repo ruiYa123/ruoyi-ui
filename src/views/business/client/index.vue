@@ -779,7 +779,7 @@ export default {
     }
 
     &.selected-card {
-      border: 2px solid #409EFF;
+      border: 1px solid #409EFF;
 
       ::v-deep.el-descriptions__body {
         background-color: inherit !important;

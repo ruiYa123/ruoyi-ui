@@ -56,7 +56,11 @@ export default {
     type: {
       type: String,
       default: "url",
-    }
+    },
+    showToolbar: {
+      type: Boolean,
+      default: true, // 默认显示工具栏
+    },
   },
   data() {
     return {
@@ -72,7 +76,7 @@ export default {
         debug: "warn",
         modules: {
           // 工具栏配置
-          toolbar: [
+          toolbar: this.showToolbar ? [
             ["bold", "italic", "underline", "strike"],       // 加粗 斜体 下划线 删除线
             ["blockquote", "code-block"],                    // 引用  代码块
             [{ list: "ordered" }, { list: "bullet" }],       // 有序、无序列表
@@ -83,7 +87,7 @@ export default {
             [{ align: [] }],                                 // 对齐方式
             ["clean"],                                       // 清除文本格式
             ["link", "image", "video"]                       // 链接、图片、视频
-          ],
+          ] : false, // 如果不显示工具栏，设置为 false
         },
         placeholder: "请输入内容",
         readOnly: this.readOnly,
@@ -125,17 +129,19 @@ export default {
     init() {
       const editor = this.$refs.editor;
       this.Quill = new Quill(editor, this.options);
+
       // 如果设置了上传地址则自定义图片上传事件
-      if (this.type == 'url') {
+      if (this.type === 'url' && this.showToolbar) { // 仅在工具栏存在时添加处理程序
         let toolbar = this.Quill.getModule("toolbar");
         toolbar.addHandler("image", (value) => {
           if (value) {
             this.$refs.upload.$children[0].$refs.input.click();
           } else {
-            this.quill.format("image", false);
+            this.Quill.format("image", false);
           }
         });
       }
+
       this.Quill.clipboard.dangerouslyPasteHTML(this.currentValue);
       this.Quill.on("text-change", (delta, oldDelta, source) => {
         const html = this.$refs.editor.children[0].innerHTML;
