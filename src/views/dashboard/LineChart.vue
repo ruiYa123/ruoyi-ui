@@ -34,7 +34,7 @@ export default {
       console.log('updateLineChart');
 
       // 获取所有键并转换为数字
-      const labels = Object.keys(this.data).map(Number);
+      const labels = Object.keys(this.data).map(key => parseInt(key, 10));
 
       // 根据键获取损失和准确率数据
       const lossData = labels.map(key => (this.data[key.toFixed(1)] ? this.data[key.toFixed(1)][0] : null));
@@ -52,7 +52,7 @@ export default {
         },
         xAxis: {
           type: 'category',
-          data: labels.map(label => label.toFixed(1)), // 保持与数据一致的格式
+          data: labels,
           name: 'Training Progress (%)',
           nameLocation: 'middle',
           nameGap: 30,
