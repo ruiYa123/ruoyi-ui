@@ -60,6 +60,8 @@ export default {
         yAxis: {
           type: 'value',
           name: 'Value',
+          min: 0,
+          max: 1,
         },
         series: [
           {
