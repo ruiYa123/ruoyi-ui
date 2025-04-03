@@ -19,7 +19,7 @@ export function listAllAssignment(query) {
 
 export function getProcessChart(projectName, assignmentName) {
   return request({
-    url: '/business/assignment/' + projectName + '/' + assignmentName,
+    url: '/business/assignment/progress' + projectName + '/' + assignmentName,
     method: 'get'
   })
 }
