@@ -56,6 +56,8 @@ export default {
           name: 'Training Progress (%)',
           nameLocation: 'middle',
           nameGap: 30,
+          min:0,
+          max:30
         },
         yAxis: {
           type: 'value',
