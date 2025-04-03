@@ -31,14 +31,12 @@ export default {
   },
   methods: {
     renderChart() {
-      console.log('updateLineChart');
 
       // 获取所有键并转换为数字
-      const labels = Object.keys(this.data).map(key => parseInt(key, 10));
-
+      const labels = Array.from({ length: 101 }, (_, i) => i);
       // 根据键获取损失和准确率数据
-      const lossData = labels.map(key => (this.data[key.toFixed(1)] ? this.data[key.toFixed(1)][0] : null));
-      const accuracyData = labels.map(key => (this.data[key.toFixed(1)] ? this.data[key.toFixed(1)][1] : null));
+      const lossData = labels.map(key => (this.data[key.toFixed(1)] ? this.data[key.toFixed(1)][0].toFixed(2) : null));
+      const accuracyData = labels.map(key => (this.data[key.toFixed(1)] ? this.data[key.toFixed(1)][1].toFixed(2)  : null));
 
       const option = {
         title: {
@@ -57,7 +55,7 @@ export default {
           nameLocation: 'middle',
           nameGap: 30,
           min:0,
-          max:30
+          max:100
         },
         yAxis: {
           type: 'value',
