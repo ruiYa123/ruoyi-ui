@@ -289,7 +289,7 @@ import {
   startAssignment,
   startPrioritizeAssignment, stopAssignment
 } from '@/api/business/assignment'
-import { getTrain, listTrain } from '@/api/business/train'
+import { getTrain, getTrainDetail, listTrain } from '@/api/business/train'
 import AddAssignmentDialog from '@/views/business/assignment/addAssignmentDialog.vue'
 import resources from '@/views/business/resources/index.vue'
 import { listTrainLog } from '@/api/business/trainLog'
@@ -381,16 +381,12 @@ export default {
       trainLogTotal: 0,
       selectedTrainRecord: null,
       currentIndex: 0,
-      intervalId: null,
+      trainProcess: '',
     };
   },
   beforeDestroy() {
     if (this.fetchLogsInterval) {
       clearInterval(this.fetchLogsInterval);
-    }
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null; // 重置定时器 ID
     }
   },
   created() {
@@ -401,7 +397,6 @@ export default {
         this.getList(id);
         this.startFetchingLogs();
       });
-    this.startInterval();
 
 
   },
@@ -411,31 +406,7 @@ export default {
       console.log(fullPath)
       return `http://${config.fileServer.ip}:${config.fileServer.port}/${fullPath}/BoxPR_curve.png`;
     },
-    startInterval() {
-      if (this.intervalId) {
-        clearInterval(this.intervalId);
-        this.intervalId = null; // 重置定时器 ID
-      }
 
-      this.intervalId = setInterval(() => {
-        if (this.assignmentDetail.state === 1) {
-          getProcessChart(
-            this.getProjectName(this.assignmentDetail.projectId),
-            this.assignmentDetail.assignmentName)
-            .then(res => {
-              Object.keys(res.data).forEach(key => {
-                this.$set(this.jsonData, key, res.data[key]);
-              });
-            })
-
-          // this.$set(this.jsonData, this.currentIndex, [lossValue, accuracyValue]);
-        } else {
-          clearInterval(this.intervalId);
-          this.intervalId = null;
-        }
-      }, 1000);
-
-    },
     downloadModel(detail) {
       let notifyInstance;
       try {
@@ -571,8 +542,13 @@ export default {
     startFetchingLogs() {
       this.fetchLogsInterval = setInterval(() => {
         if (this.selectedTrainRecord) {
-          getTrain(this.selectedTrainRecord.id).then(res => {
+          getTrainDetail(this.selectedTrainRecord.id).then(res => {
+            console.log(res.data)
             this.progress = res.data.progress
+            Object.keys(res.data.jsonData).forEach(key => {
+              this.$set(this.jsonData, key, res.data[key]);
+            });
+            this.trainProcess = res.trainProcess
           })
           const tempTrainLogQueryParams = {
             assignmentTrainId: this.selectedTrainRecord.id,

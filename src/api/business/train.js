@@ -17,6 +17,13 @@ export function getTrain(id) {
   })
 }
 
+export function getTrainDetail(id) {
+  return request({
+    url: '/business/train/getTrainDetail/' + id,
+    method: 'get'
+  })
+}
+
 // 新增任务训练
 export function addTrain(data) {
   return request({
