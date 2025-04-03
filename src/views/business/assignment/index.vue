@@ -388,6 +388,10 @@ export default {
     if (this.fetchLogsInterval) {
       clearInterval(this.fetchLogsInterval);
     }
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null; // 重置定时器 ID
+    }
   },
   created() {
     Promise.all([this.getProjectList()])
@@ -408,7 +412,10 @@ export default {
       return `http://${config.fileServer.ip}:${config.fileServer.port}/${fullPath}/BoxPR_curve.png`;
     },
     startInterval() {
-      if (this.intervalId) return; // 防止重复启动
+      if (this.intervalId) {
+        clearInterval(this.intervalId);
+        this.intervalId = null; // 重置定时器 ID
+      }
 
       this.intervalId = setInterval(() => {
         if (this.assignmentDetail.state === 1) {
