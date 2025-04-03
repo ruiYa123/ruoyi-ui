@@ -31,10 +31,14 @@ export default {
   },
   methods: {
     renderChart() {
-      console.log('updateLineChart')
-      const labels = Array.from({ length: 101 }, (_, i) => i);
-      const lossData = labels.map(key => (this.data[key] ? this.data[key][0] : null));
-      const accuracyData = labels.map(key => (this.data[key] ? this.data[key][1] : null));
+      console.log('updateLineChart');
+
+      // 获取所有键并转换为数字
+      const labels = Object.keys(this.data).map(Number);
+
+      // 根据键获取损失和准确率数据
+      const lossData = labels.map(key => (this.data[key.toFixed(1)] ? this.data[key.toFixed(1)][0] : null));
+      const accuracyData = labels.map(key => (this.data[key.toFixed(1)] ? this.data[key.toFixed(1)][1] : null));
 
       const option = {
         title: {
@@ -48,16 +52,14 @@ export default {
         },
         xAxis: {
           type: 'category',
-          data: labels,
+          data: labels.map(label => label.toFixed(1)), // 保持与数据一致的格式
           name: 'Training Progress (%)',
-          nameLocation: 'middle', // 将名称放在坐标轴中间
-          nameGap: 30, // 调整名称与坐标轴之间的距离
+          nameLocation: 'middle',
+          nameGap: 30,
         },
         yAxis: {
           type: 'value',
           name: 'Value',
-          min: 0,
-          max: 1,
         },
         series: [
           {
@@ -68,8 +70,8 @@ export default {
             lineStyle: {
               color: 'rgba(255, 99, 132, 1)',
             },
-            connectNulls: true, // 连接空值
-            showSymbol: false
+            connectNulls: true,
+            showSymbol: false,
           },
           {
             name: 'Accuracy',
@@ -79,14 +81,14 @@ export default {
             lineStyle: {
               color: 'rgba(54, 162, 235, 1)',
             },
-            connectNulls: true, // 连接空值
-            showSymbol: false
+            connectNulls: true,
+            showSymbol: false,
           },
         ],
       };
 
       this.myChart.setOption(option, { notMerge: true });
-    },
+    }
   },
   beforeDestroy() {
     if (this.myChart) {
