@@ -155,8 +155,8 @@
                 <div class="task-title-container">
                   <span class="task-title">训练任务信息</span>
                   <div v-if="activeNames !== '4'">
-                    <div v-if="assignmentInfo.assignmentName" class="task-summary">
-                      <el-tag class="task-name">{{ assignmentInfo.assignmentName }}</el-tag>
+                    <div v-if="assignmentInfo.AssignmentName" class="task-summary">
+                      <el-tag class="task-name">{{ assignmentInfo.AssignmentName }}</el-tag>
                       <el-progress
                         :percentage="assignmentInfo.trainPercentage"
                         class="title-progress"
@@ -170,7 +170,7 @@
                 </div>
               </template>
 
-              <div v-if="assignmentInfo.assignmentName" class="task-content">
+              <div v-if="assignmentInfo.AssignmentName" class="task-content">
                 <el-row :gutter="20">
                   <!-- 左侧圆形进度条 -->
                   <el-col :span=6 class="progress-container">
@@ -192,27 +192,16 @@
                   <el-col :span=18 class="params-container">
                     <el-descriptions :column="2" border>
                       <el-descriptions-item label="任务名称" :span=2>
-                        <el-tag effect="dark" type="info">{{ assignmentInfo.assignmentName }}</el-tag>
+                        <el-tag effect="dark" type="info">{{ assignmentInfo.AssignmentName }}</el-tag>
                       </el-descriptions-item>
-                      <el-descriptions-item label="预训练模型">
-                        <el-tag>{{ assignmentInfo.pretrainMode || '-' }}</el-tag>
+                      <el-descriptions-item label="所属项目">
+                        <el-tag>{{ assignmentInfo.ProjectName || '-' }}</el-tag>
                       </el-descriptions-item>
-                      <el-descriptions-item label="训练轮次">
-                        <el-tag type="warning">{{ assignmentInfo.epoch }}</el-tag>
-                      </el-descriptions-item>
-                      <el-descriptions-item label="批大小">
-                        <el-tag type="success">{{ assignmentInfo.batchSize }}</el-tag>
-                      </el-descriptions-item>
-                      <el-descriptions-item label="图像尺寸">
-                        <el-tag type="danger">{{ assignmentInfo.imgSize }}px</el-tag>
+                      <el-descriptions-item label="训练阶段">
+                        <el-tag type="warning">{{ assignmentInfo.Train_Process }}</el-tag>
                       </el-descriptions-item>
                       <el-descriptions-item label="开始时间">
                         {{ assignmentInfo.startTime || '2024-03-20 14:30' }}
-                      </el-descriptions-item>
-                      <el-descriptions-item label="任务描述" :span=2>
-                        <div class="description-text">
-                          {{ assignmentInfo.description || '暂无任务描述' }}
-                        </div>
                       </el-descriptions-item>
                     </el-descriptions>
                   </el-col>
@@ -553,7 +542,7 @@ export default {
           this.diskData = this.formatPieData(clientState.ResourceUsage.Disk.Used_MB, clientState.ResourceUsage.Disk.Total_MB);
 
           // 更新训练过程状态
-          this.trainProcess = status.data.TrainState?.Train_Process || '-';
+          this.trainProcess = status.data.mcGetTrainStateFeedBack.TrainState?.Train_Process || '-';
         } catch (e) {
           this.systemInfo= {
             OS: '-',
@@ -583,9 +572,8 @@ export default {
           const trainState = status.data.mcGetTrainStateFeedBack.TrainState
 
           this.assignmentInfo = {
-            assignmentName: status.data.assignmentName,
             trainPercentage: trainState.Train_Percentage,
-            ...status.data.assignment
+            ...trainState
           }
         } catch (e) {
           this.assignmentInfo = {

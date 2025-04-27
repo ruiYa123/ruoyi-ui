@@ -24,13 +24,13 @@
         </el-select>
       </el-form-item>
       <el-form-item label="训练次数" prop="epoch">
-        <el-input type="number" v-model="localForm.epoch" placeholder="请输入训练次数" />
+        <el-input type="number" v-model="localForm.epoch" placeholder="默认为300" />
       </el-form-item>
       <el-form-item label="批大小" prop="batchSize">
-        <el-input type="number" v-model="localForm.batchSize" placeholder="请输入批大小" />
+        <el-input type="number" v-model="localForm.batchSize" placeholder="默认为16" />
       </el-form-item>
       <el-form-item label="图像大小" prop="imgSize">
-        <el-input type="number" v-model="localForm.imgSize" placeholder="请输入图像大小" />
+        <el-input type="number" v-model="localForm.imgSize" placeholder="默认为640" />
       </el-form-item>
       <el-form-item label="描述" prop="description">
         <el-input v-model="localForm.description" type="textarea" placeholder="请输入内容" />
@@ -54,12 +54,11 @@ export default {
     form: Object,
     isProject: {
       type: Boolean,
-      default: false // 提供默认值
+      default: false
     },
     onSubmit: {
       type: Function,
-      default: () => {
-      } // 提供一个默认的空函数
+      default: () => {}
     }
   },
   data() {
@@ -72,15 +71,17 @@ export default {
         projectId: [
           { required: true, message: "关联的项目不能为空", trigger: "blur" }
         ],
-
         pretrainMode: [
           { required: true, message: "预训练模式不能为空", trigger: "blur" }
         ],
         epoch: [
-          { required: true, message: "训练次数不能为空", trigger: "blur" },
           {
             validator: (rule, value, callback) => {
-              const numValue = Number(value); // 转换为数字
+              if (value === '' || value == null) {
+                callback();
+                return;
+              }
+              const numValue = Number(value);
               if (isNaN(numValue)) {
                 callback(new Error("训练次数必须是数字"));
               } else if (numValue < 30 || numValue > 300) {
@@ -93,10 +94,13 @@ export default {
           }
         ],
         batchSize: [
-          { required: true, message: "批大小不能为空", trigger: "blur" },
           {
             validator: (rule, value, callback) => {
-              const numValue = Number(value); // 转换为数字
+              if (value === '' || value == null) {
+                callback();
+                return;
+              }
+              const numValue = Number(value);
               if (isNaN(numValue)) {
                 callback(new Error("批大小必须是数字"));
               } else if (numValue >= 500) {
@@ -109,10 +113,13 @@ export default {
           }
         ],
         imgSize: [
-          { required: true, message: "图像大小不能为空", trigger: "blur" },
           {
             validator: (rule, value, callback) => {
-              const numValue = Number(value); // 转换为数字
+              if (value === '' || value == null) {
+                callback();
+                return;
+              }
+              const numValue = Number(value);
               if (isNaN(numValue)) {
                 callback(new Error("图像大小必须是数字"));
               } else {
@@ -166,17 +173,25 @@ export default {
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {
-          if (this.form.id != null) {
-            updateAssignment(this.form).then(() => {
+          // 处理空值并设置默认值
+          const formData = {
+            ...this.localForm,
+            epoch: this.localForm.epoch === '' || this.localForm.epoch == null ? 300 : Number(this.localForm.epoch),
+            batchSize: this.localForm.batchSize === '' || this.localForm.batchSize == null ? 16 : Number(this.localForm.batchSize),
+            imgSize: this.localForm.imgSize === '' || this.localForm.imgSize == null ? 640 : Number(this.localForm.imgSize)
+          };
+
+          if (formData.id != null) {
+            updateAssignment(formData).then(() => {
               this.$modal.msgSuccess("修改成功");
               this.localOpen = false;
-              this.onSubmit(this.localForm.id);
+              this.onSubmit(formData.id);
             });
           } else {
-            addAssignment(this.form).then(() => {
+            addAssignment(formData).then(() => {
               this.$modal.msgSuccess("新增成功");
               this.localOpen = false;
-              this.onSubmit(this.localForm.id, 0);
+              this.onSubmit(formData.id, 0);
             });
           }
         }
