@@ -197,7 +197,7 @@
                   <div v-if="activeName.includes('1')" style="display: flex; align-items: center;">
                     <div style="margin: 10px;">
                       <el-progress type="circle" :percentage="progress"></el-progress>
-                      <el-tag style="display: flex; align-items: center; justify-content: center; height: 32px; padding: 0 10px;" v-if="trainProcess !== null && trainProcess !== ''">
+                      <el-tag style="display: flex; align-items: center; justify-content: center; height: 32px; padding: 0 10px;" v-if="selectedAssignmentId && trainProcess !== null && trainProcess !== ''">
                         {{trainProcess}}中
                       </el-tag>
                     </div>
