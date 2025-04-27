@@ -498,7 +498,11 @@ export default {
       this.fetchAndSetClientStatus(client.name);
     },
     async fetchAndSetClientStatus(clientName) {
-      if (!clientName) return;
+      listAllClient(this.queryParams).then(response => {
+        this.clientList = response.data;
+
+      });
+      if (!clientName || clientName === '') return;
       const status = await getClientStatus(clientName);
       try {
         const clientState = status.data.mcGetClientStateFeedBack.ClientState
