@@ -48,7 +48,8 @@ export function addResources(data) {
     data: data,
     headers: {
       'Content-Type': 'multipart/form-data'
-    }
+    },
+    timeout: 600000
   });
 }
 
@@ -58,7 +59,8 @@ export function updateResources(data) {
   return request({
     url: '/business/resources',
     method: 'put',
-    data: data
+    data: data,
+    timeout: 600000
   })
 }
 

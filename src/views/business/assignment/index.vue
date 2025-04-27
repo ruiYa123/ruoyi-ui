@@ -197,6 +197,9 @@
                   <div v-if="activeName.includes('1')" style="display: flex; align-items: center;">
                     <div style="margin: 10px;">
                       <el-progress type="circle" :percentage="progress"></el-progress>
+                      <el-tag style="display: flex; align-items: center; justify-content: center; height: 32px; padding: 0 10px;" v-if="trainProcess !== null && trainProcess !== ''">
+                        {{trainProcess}}中
+                      </el-tag>
                     </div>
                     <div v-if="assignmentDetail.state === 1" style="margin-left: 10px;">
                       <LineChart :data="jsonData"/>
@@ -543,12 +546,13 @@ export default {
       this.fetchLogsInterval = setInterval(() => {
         if (this.selectedTrainRecord) {
           getTrainDetail(this.selectedTrainRecord.id).then(res => {
-            console.log(res.data)
-            this.progress = res.data.progress
-            Object.keys(res.data.jsonData).forEach(key => {
-              this.$set(this.jsonData, key, res.data[key]);
-            });
-            this.trainProcess = res.trainProcess
+            this.progress = res.data.progress || 0.0
+            this.trainProcess = res.data.trainProcess
+            if (res.data.jsonData) {
+              Object.keys(res.data.jsonData).forEach(key => {
+                this.$set(this.jsonData, key, res.data.jsonData[key]);
+              });
+            }
           })
           const tempTrainLogQueryParams = {
             assignmentTrainId: this.selectedTrainRecord.id,
