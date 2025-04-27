@@ -544,6 +544,24 @@ export default {
     },
     startFetchingLogs() {
       this.fetchLogsInterval = setInterval(() => {
+        if (this.queryParams.state == 1 || this.queryParams.state == 2) {
+          if (this.queryParams.state === 2) {
+            this.queryParams.orderByColumn = null
+          }
+          listAssignment(this.queryParams).then(res => {
+            this.queryParams.orderByColumn = 'id'
+            const resIds = res.rows.map(item => item.id);
+            const assignmentIds = this.assignmentList.map(item => item.id);
+
+            const allIdsMatch =
+              resIds.length === assignmentIds.length &&
+              resIds.every(id => assignmentIds.includes(id)) &&
+              assignmentIds.every(id => resIds.includes(id));
+            if (!allIdsMatch) {
+              this.getList()
+            }
+          })
+        }
         if (this.selectedTrainRecord) {
           getTrainDetail(this.selectedTrainRecord.id).then(res => {
             this.progress = res.data.progress || 0.0
