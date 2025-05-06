@@ -84,7 +84,7 @@
                 </div>
               </template>
               <!-- 分块展示 -->
-              <div style="height: 1000px">
+              <div>
                 <el-row :gutter="20" style="margin-bottom: 20px;">
                   <el-col :span=24>
                     <el-card>
@@ -181,11 +181,17 @@
                       :stroke-width="8"
                     />
 <!--                    <div class="progress-label">训练进度</div>-->
-                    <el-button
-                      type="warning" plain
-                      class="progress-label"
-                      @click="stopTrainHandler"
-                    >停止任务</el-button>
+                    <el-tooltip content="只有在训练模型阶段才可以停止任务">
+                      <span>
+                        <el-button
+                          type="warning" plain
+                          class="progress-label"
+                          :disabled="this.assignmentInfo.Train_Process !== 'Train_Model'"
+                          @click="stopTrainHandler"
+                        >停止任务</el-button>
+                      </span>
+                    </el-tooltip>
+
                   </el-col>
 
                   <!-- 右侧参数信息 -->
@@ -230,8 +236,11 @@
                   <el-button type="primary" @click="sendCommand" style="margin-left: 50px; margin-bottom: 20px">发送指令</el-button>
                 </div>
 
-                <el-form-item label="工程名称" v-if="commandForm.commandStr === 'StartTrain' || commandForm.commandStr === 'ChangeTrainPara'">
+                <el-form-item label="项目名称" v-if="commandForm.commandStr === 'StartTrain' || commandForm.commandStr === 'ChangeTrainPara'">
                   <el-input v-model="commandForm.projectName" />
+                </el-form-item>
+                <el-form-item label="任务名称" v-if="commandForm.commandStr === 'StartTrain' || commandForm.commandStr === 'ChangeTrainPara'">
+                  <el-input v-model="commandForm.assignmentName" />
                 </el-form-item>
 
                 <el-form-item label="训练参数" v-if="commandForm.commandStr === 'StartTrain' || commandForm.commandStr === 'ChangeTrainPara'">
@@ -623,12 +632,13 @@ export default {
       try {
         // 构建 jsonMessage 字段
         const jsonMessage = JSON.stringify({
-          commandStr: this.commandForm.commandStr,
-          clientName: selectedClient.name,
+          CommandStr: this.commandForm.commandStr,
+          ClientName: selectedClient.name,
           ...(this.commandForm.commandStr === 'StartTrain' || this.commandForm.commandStr === 'ChangeTrainPara' ?
-            { projectName: this.commandForm.projectName } : {}),
-          ...(this.commandForm.commandStr === 'StartTrain' || this.commandForm.commandStr === 'ChangeTrainPara' ?
-            { trainPara: this.commandForm.trainPara } : {})
+            { ProjectName: this.commandForm.projectName,
+              AssignmentName: this.commandForm.assignmentName,
+              TrainPara: this.commandForm.trainPara
+            } : {})
         });
 
         // 调用后端接口
@@ -917,5 +927,13 @@ export default {
   text-align: center;
   background: #f8f9fa;
 }
+
+::v-deep .el-collapse-item__content {
+  padding-bottom: 10px;
+  max-height: 630px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 
 </style>

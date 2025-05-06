@@ -138,8 +138,10 @@ export default {
   },
   watch: {
     open(newVal) {
-      if (!newVal) {
-        this.cancel()
+      if (newVal) {
+        this.getProjectList();
+      } else {
+        this.cancel();
       }
     }
   },

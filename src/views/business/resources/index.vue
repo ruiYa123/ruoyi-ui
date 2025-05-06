@@ -424,7 +424,7 @@ export default {
       return parts[parts.length - 1];
    },
     getRelativePath(fullPath) {
-      return `http://${config.fileServer.ip}:${config.fileServer.port}/${fullPath}`;
+      return `http://${config.fileServer.url}/${fullPath}`;
     },
     getImage(fullPath) {
       return getImage(fullPath)

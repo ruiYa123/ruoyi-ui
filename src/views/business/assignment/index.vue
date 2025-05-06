@@ -178,14 +178,21 @@
                     plain
                     @click.stop="startAssignment"
                   >加入训练队列</el-button>
+                  <el-tooltip content="只有在训练模型阶段才可以停止任务" placement="right">
+                    <span>
+                      <el-button
+                        v-if="selectedAssignmentId && (this.queryParams.state === 1 || this.queryParams.state === 2)"
+                        :disabled="trainProcess !== '训练模型'"
+                        type="warning"
+                        plain
+                        @click.stop="stopAssignment"
+                      >停止训练</el-button>
+                    </span>
+
+                  </el-tooltip>
+
                   <el-button
-                    v-if="selectedAssignmentId && (this.queryParams.state === 1 || this.queryParams.state === 2)"
-                    type="warning"
-                    plain
-                    @click.stop="stopAssignment"
-                  >停止训练</el-button>
-                  <el-button
-                    v-if="selectedAssignmentId"
+                    v-if="selectedAssignmentId && this.queryParams.state !== 1"
                     type="danger"
                     plain
                     @click.stop
@@ -193,9 +200,9 @@
                     v-hasPermi="['business:assignment:remove']"
                   >删除任务</el-button>
                 </div>
-                <div class="container" style="min-height: 350px">
+                <div v-if="this.queryParams.state == 1 || this.queryParams.state == 0" class="container" style="min-height: 350px">
                   <div v-if="activeName.includes('1')" style="display: flex; align-items: center;">
-                    <div style="margin: 10px;">
+                    <div v-if="this.queryParams.state == 1" style="margin: 10px;">
                       <el-progress type="circle" :percentage="progress"></el-progress>
                       <el-tag style="display: flex; align-items: center; justify-content: center; height: 32px; padding: 0 10px;" v-if="selectedAssignmentId && trainProcess !== null && trainProcess !== ''">
                         {{trainProcess}}中
@@ -209,7 +216,11 @@
                         :src="getRelativePath(getProjectName(assignmentDetail.projectId) + '_' + assignmentDetail.assignmentName)"
                         alt="训练状态图像"
                         style="max-width: 100%; height: 350px;"
+                        onerror="this.onerror=null;this.alt='无法加载训练状态图像';this.style.display='none';this.nextElementSibling.style.display='block'"
                       />
+<!--                      <div style="display:none; width:100%; height:350px; background:#f5f5f5; color:#999; display:flex; align-items:center; justify-content:center;">-->
+<!--                        无法加载训练状态图像-->
+<!--                      </div>-->
                     </div>
                   </div>
                 </div>
@@ -407,7 +418,7 @@ export default {
     checkRole,
     getRelativePath(fullPath) {
       console.log(fullPath)
-      return `http://${config.fileServer.ip}:${config.fileServer.port}/${fullPath}/BoxPR_curve.png`;
+      return `http://${config.fileServer.url}/${fullPath}/BoxPR_curve.png`;
     },
 
     downloadModel(detail) {
@@ -429,7 +440,7 @@ export default {
         const folderPath = `${projectName}_${assignmentName}`;
 
         // 构建下载文件夹的 URL
-        const downloadUrl = `http://${config.fileServer.ip}:${config.fileServer.port}/download/${folderPath}`; // 假设你的服务器在这个地址
+        const downloadUrl = `http://${config.fileServer.url}/download/${folderPath}`; // 假设你的服务器在这个地址
         // 发起下载请求
         fetch(downloadUrl)
           .then(response => {
